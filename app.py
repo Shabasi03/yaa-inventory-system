@@ -38,6 +38,8 @@ def save_settings(settings):
     except:
         pass
 
+GSHEET_URL = "https://docs.google.com/spreadsheets/d/1goeE1w9QaDuTGXcj1EEClj14gPC_3xRL8wZIU9lFOlY/edit?usp=sharing"
+
 import threading
 import time
 
@@ -466,7 +468,6 @@ if st.session_state.get("session_downgraded"):
 
 
 # ─── GOOGLE SHEET AUTO-SYNC LOGIC ────────────────────────────────────────────
-GSHEET_URL = "https://docs.google.com/spreadsheets/d/1goeE1w9QaDuTGXcj1EEClj14gPC_3xRL8wZIU9lFOlY/edit?usp=sharing"
 
 if "last_sync" not in st.session_state:
     st.session_state["last_sync"] = None
