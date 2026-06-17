@@ -487,15 +487,40 @@ def perform_sync():
             st.error(f"Sync failed: {e}")
             return False
 
-# Auto-sync at startup ONLY if the database is empty (e.g. on fresh container deployment)
-with get_session() as session:
-    is_db_empty = (session.query(Product).count() == 0)
+# Startup sync: check for sheet updates on startup to pull any extra lines/external edits
+if "initial_sync_done" not in st.session_state:
+    st.session_state["initial_sync_done"] = True
+    with st.spinner("🔄 Synchronizing database with Google Sheet on startup..."):
+        with get_session() as session:
+            try:
+                is_db_empty = (session.query(Product).count() == 0)
+                if is_db_empty:
+                    # Force full download/sync
+                    logic.sync_google_sheet(session, GSHEET_URL)
+                    # Update local hash file so subsequent checks work correctly
+                    try:
+                        import urllib.request, hashlib, time
+                        export_url = GSHEET_URL.split("/edit")[0] + "/export?format=xlsx"
+                        connector = "&" if "?" in export_url else "?"
+                        export_url = f"{export_url}{connector}cachebust={int(time.time())}"
+                        opener = urllib.request.build_opener()
+                        opener.addheaders = [('User-Agent', 'Mozilla/5.0')]
+                        urllib.request.install_opener(opener)
+                        data = urllib.request.urlopen(export_url).read()
+                        current_hash = hashlib.md5(data).hexdigest()
+                        with open("last_gsheet_hash.txt", "w") as f:
+                            f.write(current_hash)
+                    except Exception:
+                        pass
+                else:
+                    # Database has data, check if Google Sheet has new external changes (extra lines)
+                    logic.check_google_sheet_updates(session, GSHEET_URL)
+                session.commit()
+                st.session_state["last_sync"] = datetime.now()
+                st.cache_data.clear()
+            except Exception as e:
+                st.error(f"Startup sync failed: {e}")
 
-if is_db_empty:
-    if "initial_sync_done" not in st.session_state:
-        st.session_state["initial_sync_done"] = True
-        with st.spinner("🔄 Initializing database from Google Sheets..."):
-            perform_sync()
 
 # Network checks are deferred entirely to the background thread to prevent UI lag.
 
