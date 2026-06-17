@@ -219,7 +219,7 @@ if not st.session_state["logged_in"]:
         with st.form("login_form", clear_on_submit=False):
             username = st.text_input("Username", value="Admin")
             password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("🔓 Authenticate & Enter", type="primary", use_container_width=True)
+            submitted = st.form_submit_button("🔓 Authenticate & Enter", type="primary", width='stretch')
             if submitted:
                 if (username == "Admin" and password in ["Yaa2813", "Yaa3728"]) or (username == "User" and password == "User2026"):
                     st.session_state["logged_in"] = True
@@ -575,7 +575,7 @@ with col_status:
     else:
         st.markdown("<p style='color:#64748b;font-size:0.85rem;margin-top:8px;'>🌐 Not synced with Google Sheet yet.</p>", unsafe_allow_html=True)
 with col_btn:
-    if st.button("🔄 Sync Now", use_container_width=True):
+    if st.button("🔄 Sync Now", width='stretch'):
         with st.spinner("Syncing..."):
             if perform_sync():
                 st.success("Synced!")
@@ -1055,7 +1055,7 @@ def dialog_add_product():
             buying_price  = st.number_input("Buying Price (EGP)",  min_value=0.0, value=500.0, step=10.0)
             selling_price = st.number_input("Selling Price (EGP)", min_value=0.0, value=750.0, step=10.0)
 
-        submitted = st.form_submit_button("✅ Register Product", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("✅ Register Product", type="primary", width='stretch')
         if submitted:
             if not sku or not item_name:
                 st.error("SKU and English Item Name are required!")
@@ -1092,7 +1092,7 @@ def dialog_restock():
                                     format_func=lambda x: product_options[x])
         qty_to_add   = st.number_input("Quantity to Add", min_value=1, value=5, step=1)
         restock_reason = st.text_input("Reason", value="Restock shipment")
-        submitted = st.form_submit_button("📥 Apply Restock", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("📥 Apply Restock", type="primary", width='stretch')
         if submitted:
             with get_session() as session:
                 try:
@@ -1116,7 +1116,7 @@ def dialog_add_customer():
         customer_name = st.text_input("Customer Full Name *", placeholder="Jane Doe")
         phone   = st.text_input("Phone Number * (Unique)", placeholder="+20100000000").strip()
         address = st.text_input("Billing Address", placeholder="Cairo, Egypt")
-        submitted = st.form_submit_button("✅ Register Customer", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("✅ Register Customer", type="primary", width='stretch')
         if submitted:
             if not customer_name or not phone:
                 st.error("Name and Phone are required!")
@@ -1144,7 +1144,7 @@ def dialog_add_expense():
         amount_val = st.number_input("Amount (EGP) *", min_value=0.0, value=100.0, step=10.0)
         wallet_val = st.selectbox("Wallet / Account", options=["شباسي", "حجازي"])
         day_val = st.date_input("Date", value=datetime.today())
-        submitted = st.form_submit_button("✅ Record Expense", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("✅ Record Expense", type="primary", width='stretch')
         if submitted:
             if not item_val:
                 st.error("Expense Item name is required!")
@@ -1189,7 +1189,7 @@ def dialog_new_order(cust_options, prod_options):
         with c2:
             payment_status = st.selectbox("Payment Status", ["Pending","Paid","Failed"])
 
-        submitted = st.form_submit_button("🛒 Submit Order", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("🛒 Submit Order", type="primary", width='stretch')
         if submitted:
             with get_session() as session:
                 try:
@@ -1281,7 +1281,7 @@ with tab_dashboard:
                 "SKU": p.sku, "Product Name": p.item_name, "Arabic Name": p.item_name_arabic,
                 "Stock": p.initial_quantity, "Price": f"EGP {p.selling_price:.2f}", "Supplier": p.supplier
             } for p in low_stock_prods]
-            st.dataframe(style_zebra(pd.DataFrame(low_stock_data)), use_container_width=True, hide_index=True)
+            st.dataframe(style_zebra(pd.DataFrame(low_stock_data)), width='stretch', hide_index=True)
         else:
             st.success("✅ All products are above the 5-unit safety threshold.")
 
@@ -1295,7 +1295,7 @@ with tab_dashboard:
                 "Qty Change": f"+{e.quantity_change}" if e.quantity_change > 0 else str(e.quantity_change),
                 "Movement Reason": _format_ledger_reason(e.reason),
             } for e in ledger_entries]
-            st.dataframe(style_zebra(pd.DataFrame(ledger_data)), use_container_width=True, hide_index=True)
+            st.dataframe(style_zebra(pd.DataFrame(ledger_data)), width='stretch', hide_index=True)
         else:
             st.info("No stock movements recorded yet.")
 
@@ -1313,10 +1313,10 @@ with tab_products:
     # ── Action buttons ────────────────────────────────────────────────────────
     btn_col1, btn_col2, _ = st.columns([1, 1, 4])
     with btn_col1:
-        if st.button("➕ Add New Product", type="primary", use_container_width=True):
+        if st.button("➕ Add New Product", type="primary", width='stretch'):
             dialog_add_product()
     with btn_col2:
-        if st.button("📥 Restock Product", use_container_width=True):
+        if st.button("📥 Restock Product", width='stretch'):
             dialog_restock()
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1331,7 +1331,7 @@ with tab_products:
                 "Selling (EGP)": f"EGP {p.selling_price:.2f}", "Supplier": p.supplier
             } for p in products]
             df_prod = pd.DataFrame(prod_data)
-            evt = st.dataframe(style_zebra(df_prod), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"prod_df_{st.session_state.prod_df_ver}")
+            evt = st.dataframe(style_zebra(df_prod), width='stretch', hide_index=True, on_select="rerun", selection_mode="single-row", key=f"prod_df_{st.session_state.prod_df_ver}")
             if evt and evt.selection and evt.selection.rows:
                 selected_row = evt.selection.rows[0]
                 sku = df_prod.iloc[selected_row]["SKU"]
@@ -1353,7 +1353,7 @@ with tab_customers:
 
     btn_col, _ = st.columns([1, 5])
     with btn_col:
-        if st.button("➕ Register Customer", type="primary", use_container_width=True):
+        if st.button("➕ Register Customer", type="primary", width='stretch'):
             dialog_add_customer()
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1366,7 +1366,7 @@ with tab_customers:
                 "Phone": c.customer_phone_number, "Address": c.customer_address
             } for c in customers]
             df_cust = pd.DataFrame(cust_data)
-            evt = st.dataframe(style_zebra(df_cust), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"cust_df_{st.session_state.cust_df_ver}")
+            evt = st.dataframe(style_zebra(df_cust), width='stretch', hide_index=True, on_select="rerun", selection_mode="single-row", key=f"cust_df_{st.session_state.cust_df_ver}")
             if evt and evt.selection and evt.selection.rows:
                 selected_row = evt.selection.rows[0]
                 cust_id = int(df_cust.iloc[selected_row]["ID"])
@@ -1398,7 +1398,7 @@ with tab_orders:
     # ── Action button ──────────────────────────────────────────────────────────
     btn_col, receipt_col = st.columns([1, 3])
     with btn_col:
-        if st.button("🛒 Process New Order", type="primary", use_container_width=True):
+        if st.button("🛒 Process New Order", type="primary", width='stretch'):
             dialog_new_order(cust_options, prod_options)
 
     # Receipt download banner (persists after order submission)
@@ -1412,7 +1412,7 @@ with tab_orders:
                     data=st.session_state["receipt_pdf"],
                     file_name=f"receipt_order_{r_id}.pdf",
                     mime="application/pdf",
-                    use_container_width=True,
+                    width='stretch',
                 )
             with rc2:
                 if st.button("✖ Dismiss", key="dismiss_receipt"):
@@ -1448,7 +1448,7 @@ with tab_orders:
                         "Date": first.order_date.strftime("%Y-%m-%d %H:%M"),
                     })
                 df_orders = pd.DataFrame(orders_data)
-                evt = st.dataframe(style_zebra(df_orders), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"order_df_{st.session_state.order_df_ver}")
+                evt = st.dataframe(style_zebra(df_orders), width='stretch', hide_index=True, on_select="rerun", selection_mode="single-row", key=f"order_df_{st.session_state.order_df_ver}")
                 if evt and evt.selection and evt.selection.rows:
                     selected_row = evt.selection.rows[0]
                     order_id = int(df_orders.iloc[selected_row]["Order ID"])
@@ -1531,7 +1531,7 @@ with tab_orders:
                 "Qty Adjustment": f"+{e.quantity_change}" if e.quantity_change > 0 else str(e.quantity_change),
                 "Movement Reason": _format_ledger_reason(e.reason),
             } for e in ledger]
-            st.dataframe(style_zebra(pd.DataFrame(led_data)), use_container_width=True, hide_index=True)
+            st.dataframe(style_zebra(pd.DataFrame(led_data)), width='stretch', hide_index=True)
         else:
             st.info("No ledger entries recorded.")
 
@@ -1615,7 +1615,7 @@ with tab_expenses:
         
         with col_actions:
             st.subheader("➕ Record New Expense")
-            if st.button("➕ Add New Expense", type="primary", use_container_width=True):
+            if st.button("➕ Add New Expense", type="primary", width='stretch'):
                 dialog_add_expense()
                 
         with col_settle:
@@ -1626,7 +1626,7 @@ with tab_expenses:
                 with st.form("debt_settlement_form", clear_on_submit=True):
                     settle_amount = st.number_input("Settlement Amount to Subtract (EGP) *", min_value=0.0, value=outstanding_debt if outstanding_debt > 0 else 100.0, step=10.0)
                     settle_notes = st.text_input("Notes", placeholder="Repayment of trip expenses / transfer")
-                    if st.form_submit_button("✅ Record Settlement Transfer", type="primary", use_container_width=True):
+                    if st.form_submit_button("✅ Record Settlement Transfer", type="primary", width='stretch'):
                         if settle_amount <= 0:
                             st.error("Please enter an amount greater than 0.")
                         else:
@@ -1667,7 +1667,7 @@ with tab_expenses:
                     "Amount": f"EGP {e.amount:,.2f}"
                 } for e in expenses]
                 df_exp = pd.DataFrame(exp_data)
-                evt = st.dataframe(style_zebra(df_exp), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"exp_df_{st.session_state.exp_df_ver}")
+                evt = st.dataframe(style_zebra(df_exp), width='stretch', hide_index=True, on_select="rerun", selection_mode="single-row", key=f"exp_df_{st.session_state.exp_df_ver}")
                 if evt and evt.selection and evt.selection.rows:
                     selected_row = evt.selection.rows[0]
                     expense_id = expenses[selected_row].expense_id
@@ -1685,7 +1685,7 @@ with tab_expenses:
                     "Amount (EGP)": f"EGP {s.amount:,.2f}",
                     "Notes": s.notes or "—"
                 } for s in settlements]
-                st.dataframe(style_zebra(pd.DataFrame(settle_data)), use_container_width=True, hide_index=True)
+                st.dataframe(style_zebra(pd.DataFrame(settle_data)), width='stretch', hide_index=True)
             else:
                 st.info("No settlements recorded yet.")
 
@@ -1708,7 +1708,7 @@ if is_admin_user:
                     "Action": l.action,
                     "Details": l.details
                 } for l in logs]
-                st.dataframe(style_zebra(pd.DataFrame(log_data)), use_container_width=True, hide_index=True)
+                st.dataframe(style_zebra(pd.DataFrame(log_data)), width='stretch', hide_index=True)
             else:
                 st.info("No system actions logged yet.")
 
@@ -1723,7 +1723,7 @@ with tab_settings:
     with c1:
         st.info(f"👤 Currently logged in as: **{st.session_state.get('user_role', 'Unknown')}**")
     with c2:
-        if st.button("🚪 Logout", type="primary", use_container_width=True, key="btn_logout"):
+        if st.button("🚪 Logout", type="primary", width='stretch', key="btn_logout"):
             with st.spinner("Syncing pending changes to Google Sheet before logging out..."):
                 try:
                     BackgroundSyncManager.sync_now_blocking()
