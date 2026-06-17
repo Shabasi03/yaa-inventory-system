@@ -569,6 +569,7 @@ def dialog_edit_product(sku):
                 except Exception:
                     pass
                 st.session_state["edit_sku"] = None
+                st.session_state["prod_df_ver"] += 1
                 st.success("Product updated!")
                 st.rerun()
             elif deleted:
@@ -583,10 +584,12 @@ def dialog_edit_product(sku):
                 except Exception:
                     pass
                 st.session_state["edit_sku"] = None
+                st.session_state["prod_df_ver"] += 1
                 st.success("Product deleted!")
                 st.rerun()
             elif cancelled:
                 st.session_state["edit_sku"] = None
+                st.session_state["prod_df_ver"] += 1
                 st.rerun()
 
 # ─── DIALOG: Edit Customer ────────────────────────────────────────────────────
@@ -632,6 +635,7 @@ def dialog_edit_customer(cust_id):
                 except Exception:
                     pass
                 st.session_state["edit_cust_id"] = None
+                st.session_state["cust_df_ver"] += 1
                 st.success("Customer updated!")
                 st.rerun()
             elif deleted:
@@ -645,10 +649,12 @@ def dialog_edit_customer(cust_id):
                 except Exception:
                     pass
                 st.session_state["edit_cust_id"] = None
+                st.session_state["cust_df_ver"] += 1
                 st.success("Customer deleted!")
                 st.rerun()
             elif cancelled:
                 st.session_state["edit_cust_id"] = None
+                st.session_state["cust_df_ver"] += 1
                 st.rerun()
 
 # ─── DIALOG: Edit Order ───────────────────────────────────────────────────────
@@ -697,6 +703,7 @@ def dialog_edit_order(order_id):
                 except Exception:
                     pass
                 st.session_state["edit_order_id"] = None
+                st.session_state["order_df_ver"] += 1
                 st.success("Order updated!")
                 st.rerun()
             elif deleted:
@@ -711,10 +718,12 @@ def dialog_edit_order(order_id):
                 except Exception:
                     pass
                 st.session_state["edit_order_id"] = None
+                st.session_state["order_df_ver"] += 1
                 st.success("Order deleted!")
                 st.rerun()
             elif cancelled:
                 st.session_state["edit_order_id"] = None
+                st.session_state["order_df_ver"] += 1
                 st.rerun()
 
 # ─── DIALOG: Edit Expense ─────────────────────────────────────────────────────
@@ -766,6 +775,7 @@ def dialog_edit_expense(expense_id):
                 except Exception:
                     pass
                 st.session_state["edit_expense_id"] = None
+                st.session_state["exp_df_ver"] += 1
                 st.success("Expense updated!")
                 st.rerun()
             elif deleted:
@@ -777,10 +787,12 @@ def dialog_edit_expense(expense_id):
                 except Exception:
                     pass
                 st.session_state["edit_expense_id"] = None
+                st.session_state["exp_df_ver"] += 1
                 st.success("Expense deleted!")
                 st.rerun()
             elif cancelled:
                 st.session_state["edit_expense_id"] = None
+                st.session_state["exp_df_ver"] += 1
                 st.rerun()
 
 # Trigger edit modals if active
@@ -1190,8 +1202,7 @@ with tab_products:
                 selected_row = evt.selection.rows[0]
                 sku = df_prod.iloc[selected_row]["SKU"]
                 st.session_state["edit_sku"] = sku
-                st.session_state["prod_df_ver"] += 1
-                st.rerun()
+                                st.rerun()
         else:
             st.info("No products registered yet. Click **Add New Product** to get started.")
 
@@ -1226,8 +1237,7 @@ with tab_customers:
                 selected_row = evt.selection.rows[0]
                 cust_id = int(df_cust.iloc[selected_row]["ID"])
                 st.session_state["edit_cust_id"] = cust_id
-                st.session_state["cust_df_ver"] += 1
-                st.rerun()
+                                st.rerun()
         else:
             st.info("No customers registered yet.")
 
@@ -1309,8 +1319,7 @@ with tab_orders:
                     selected_row = evt.selection.rows[0]
                     order_id = int(df_orders.iloc[selected_row]["Order ID"])
                     st.session_state["edit_order_id"] = order_id
-                    st.session_state["order_df_ver"] += 1
-                    st.rerun()
+                                        st.rerun()
             else:
                 st.info("No orders placed yet.")
 
@@ -1520,8 +1529,7 @@ with tab_expenses:
                     selected_row = evt.selection.rows[0]
                     expense_id = int(df_exp.iloc[selected_row]["ID"])
                     st.session_state["edit_expense_id"] = expense_id
-                    st.session_state["exp_df_ver"] += 1
-                    st.rerun()
+                                        st.rerun()
             else:
                 st.info("No expenses recorded yet. Click **Add New Expense** or Sync to load Google Sheet data.")
                 
