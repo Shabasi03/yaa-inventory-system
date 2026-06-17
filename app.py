@@ -118,7 +118,7 @@ if os.path.exists("yaa_logo.jpg"):
 # ─── GLOBAL CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 html, body, [class*="css"], .stMarkdown { font-family: 'Outfit', sans-serif; }
 
@@ -147,121 +147,167 @@ header[data-testid="stHeader"], header {
     background-attachment: fixed;
 }
 
-/* ── Top nav bar ── */
-.top-navbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    padding: 0 32px;
-    height: 64px;
-    border-bottom: 1px solid #1e40af;
-    position: sticky;
-    top: 0;
-    z-index: 999;
-    margin-bottom: 10px;
-}
-.top-navbar .brand {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.02em;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.top-navbar .brand span { color: #60a5fa; }
-
-/* ── Tab overrides to look like nav links ── */
+/* ── Premium Tab overrides (Modern Pill Nav) ── */
 .stTabs [data-baseweb="tab-list"] {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-    border-bottom: 2px solid #1e40af !important;
-    gap: 0 !important;
-    padding: 0 8px !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-radius: 16px !important;
+    padding: 8px 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    gap: 8px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    margin-bottom: 24px !important;
 }
 .stTabs [data-baseweb="tab"] {
     color: #94a3b8 !important;
-    font-size: 0.9rem !important;
-    font-weight: 500 !important;
-    padding: 14px 22px !important;
-    border-radius: 0 !important;
-    border-bottom: 3px solid transparent !important;
-    transition: color 0.2s, border-color 0.2s !important;
-}
-.stTabs [data-baseweb="tab"]:hover { color: #e2e8f0 !important; }
-.stTabs [aria-selected="true"] {
-    color: #60a5fa !important;
-    border-bottom: 3px solid #2563eb !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    padding: 10px 22px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     background: transparent !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+.stTabs [aria-selected="true"] {
+    color: #fff !important;
+    background: #2563eb !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
 }
 .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
 .stTabs [data-baseweb="tab-border"]    { display: none !important; }
 
-/* ── KPI cards ── */
+/* ── Glassmorphism KPI cards ── */
 .kpi-card {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 22px 24px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-    transition: transform 0.2s, box-shadow 0.2s;
-    border-top: 4px solid #2563eb;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-left: 6px solid #2563eb;
+    border-top: none;
 }
-.kpi-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0,0,0,0.08); }
-.kpi-title { font-size: 0.78rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
-.kpi-value { font-size: 1.85rem; font-weight: 700; color: #0f172a; margin-top: 6px; }
-.kpi-revenue { border-top-color: #2563eb; }
-.kpi-profit  { border-top-color: #10b981; }
-.kpi-orders  { border-top-color: #f59e0b; }
-.kpi-expenses { border-top-color: #ef4444; }
-.kpi-netprofit { border-top-color: #06b6d4; }
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 40px 0 rgba(31, 38, 135, 0.08);
+    border-left-width: 10px;
+    background: rgba(255, 255, 255, 0.85);
+}
+.kpi-title { font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.kpi-value { font-size: 1.9rem; font-weight: 800; color: #0f172a; margin-top: 6px; }
+.kpi-revenue { border-left-color: #2563eb; }
+.kpi-profit  { border-left-color: #10b981; }
+.kpi-orders  { border-left-color: #f59e0b; }
+.kpi-expenses { border-left-color: #ef4444; }
+.kpi-netprofit { border-left-color: #06b6d4; }
 
-/* ── Alert box ── */
+/* ── Interactive Premium Buttons ── */
+div.stButton > button:first-child {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    padding: 8px 20px !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+div.stButton > button[kind="primary"]:first-child {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
+    color: white !important;
+}
+div.stButton > button[kind="primary"]:first-child:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
+}
+div.stButton > button[kind="secondary"]:first-child {
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+}
+div.stButton > button[kind="secondary"]:first-child:hover {
+    background: rgba(248, 250, 252, 0.9) !important;
+    border-color: #cbd5e1 !important;
+    transform: translateY(-2px) !important;
+}
+
+/* ── Styled Input Fields ── */
+div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input, div[data-testid="stSelectbox"] select {
+    border-radius: 12px !important;
+    border: 1px solid #cbd5e1 !important;
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    transition: all 0.2s ease !important;
+}
+div[data-testid="stTextInput"] input:focus, div[data-testid="stNumberInput"] input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* ── Glassmorphism Alert box ── */
 .alert-box {
-    background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px;
-    padding: 18px 24px; border-left: 5px solid #f43f5e; color: #9f1239; margin-bottom: 24px;
+    background: rgba(254, 226, 226, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(254, 205, 205, 0.5);
+    border-radius: 16px;
+    padding: 20px 24px;
+    border-left: 6px solid #ef4444;
+    color: #991b1b;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.03);
 }
-.alert-box h4 { margin: 0 0 6px; color: #881337; font-weight: 600; }
-
-/* ── Action button row ── */
-.action-btn-row {
-    display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;
-}
+.alert-box h4 { margin: 0 0 6px; color: #7f1d1d; font-weight: 700; }
 
 /* ── Section header ── */
 .section-header {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    padding: 20px 26px; border-radius: 12px; color: white; margin-bottom: 24px;
-    border-left: 5px solid #2563eb;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 24px 28px;
+    border-radius: 18px;
+    color: white;
+    margin-bottom: 28px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    border-left: 6px solid #2563eb;
 }
-.section-header h2 { margin: 0; font-size: 1.5rem; font-weight: 700;
-    background: linear-gradient(to right,#fff,#93c5fd);
+.section-header h2 { margin: 0; font-size: 1.55rem; font-weight: 800;
+    background: linear-gradient(to right, #fff, #93c5fd);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.section-header p  { margin: 4px 0 0; opacity: 0.75; font-size: 0.88rem; }
+.section-header p  { margin: 6px 0 0; opacity: 0.75; font-size: 0.9rem; }
 
 /* ── Dialog tweaks ── */
 [data-testid="stDialog"] div[role="dialog"] {
-    border-radius: 16px !important;
-    border: 1px solid #1e40af !important;
-    box-shadow: 0 25px 60px rgba(0,0,0,0.35) !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.25) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
 }
 </style>
 """.replace("__BG_LOGO_BASE64__", bg_logo_base64), unsafe_allow_html=True)
 
-# ─── TOP HEADER (Yaa Logo + Yaa-يَــــــــاء Brand Title) ────────────────────────────────
-col_logo, col_nav = st.columns([1, 14])
-with col_logo:
-    if os.path.exists("yaa_logo.jpg"):
-        st.image("yaa_logo.jpg", width=68)
-with col_nav:
-    st.markdown("""
-    <div style="padding-top: 4px;">
-      <h1 style="font-size: 1.85rem; font-weight: 700; color: #1e293b; margin: 0; line-height: 1.2;">
-        Yaa-يَــــــــاء <span style="color: #2563eb;">Core</span>
-      </h1>
-      <p style="color: #64748b; font-size: 0.85rem; margin: 0; padding-top: 2px;">Inventory &amp; Orders Management</p>
+# ─── TOP HEADER (Flexbox Branding Header) ───────────────────────────────────
+logo_base64 = ""
+if os.path.exists("yaa_logo.jpg"):
+    with open("yaa_logo.jpg", "rb") as f:
+        logo_base64 = base64.b64encode(f.read()).decode()
+
+st.markdown(f"""
+<div style="display: flex; align-items: center; gap: 18px; margin-bottom: 24px;">
+    <img src="data:image/jpeg;base64,{logo_base64}" style="width: 58px; height: 58px; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.12);" />
+    <div>
+        <h1 style="font-size: 2rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.1; letter-spacing: -0.025em;">
+            Yaa-يَــــــــاء <span style="color: #2563eb;">Core</span>
+        </h1>
+        <p style="color: #64748b; font-size: 0.9rem; margin: 0; padding-top: 2px; font-weight: 600; letter-spacing: 0.01em;">Inventory &amp; Financial Control Hub</p>
     </div>
-    """, unsafe_allow_html=True)
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("<hr style='margin: 8px 0 16px 0; border: 0; border-top: 1px solid #e2e8f0;' />", unsafe_allow_html=True)
 
