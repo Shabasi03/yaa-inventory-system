@@ -34,7 +34,23 @@ def sync_to_google_sheet_if_configured():
     url = settings.get("apps_script_url", "")
     if url:
         with get_session() as session:
-            logic.export_to_google_sheet(session, url)
+            if logic.export_to_google_sheet(session, url):
+                try:
+                    import urllib.request
+                    import hashlib
+                    import time
+                    gsheet_url = "https://docs.google.com/spreadsheets/d/1goeE1w9QaDuTGXcj1EEClj14gPC_3xRL8wZIU9lFOlY/export?format=xlsx"
+                    connector = "&" if "?" in gsheet_url else "?"
+                    export_url = f"{gsheet_url}{connector}cachebust={int(time.time())}"
+                    opener = urllib.request.build_opener()
+                    opener.addheaders = [('User-Agent', 'Mozilla/5.0')]
+                    urllib.request.install_opener(opener)
+                    data = urllib.request.urlopen(export_url).read()
+                    current_hash = hashlib.md5(data).hexdigest()
+                    with open("last_gsheet_hash.txt", "w") as f:
+                        f.write(current_hash)
+                except Exception:
+                    pass
 
 def _format_ledger_reason(reason: str) -> str:
     if not reason:
@@ -454,15 +470,18 @@ with col_hidden:
 
 st.markdown("""
 <script>
-    setTimeout(function() {
-        var buttons = window.parent.document.querySelectorAll('button');
-        for (var i = 0; i < buttons.length; i++) {
-            if (buttons[i].textContent.trim() === "refresh_trigger_btn") {
-                buttons[i].click();
-                break;
+    if (!window.parent.__refresh_interval_set__) {
+        window.parent.__refresh_interval_set__ = true;
+        setInterval(function() {
+            var buttons = window.parent.document.querySelectorAll('button');
+            for (var i = 0; i < buttons.length; i++) {
+                if (buttons[i].textContent.trim() === "refresh_trigger_btn") {
+                    buttons[i].click();
+                    break;
+                }
             }
-        }
-    }, 10000);
+        }, 10000);
+    }
 </script>
 """, unsafe_allow_html=True)
 
