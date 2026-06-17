@@ -1202,7 +1202,7 @@ with tab_products:
                 selected_row = evt.selection.rows[0]
                 sku = df_prod.iloc[selected_row]["SKU"]
                 st.session_state["edit_sku"] = sku
-                                st.rerun()
+                st.rerun()
         else:
             st.info("No products registered yet. Click **Add New Product** to get started.")
 
@@ -1237,7 +1237,7 @@ with tab_customers:
                 selected_row = evt.selection.rows[0]
                 cust_id = int(df_cust.iloc[selected_row]["ID"])
                 st.session_state["edit_cust_id"] = cust_id
-                                st.rerun()
+                st.rerun()
         else:
             st.info("No customers registered yet.")
 
@@ -1319,7 +1319,7 @@ with tab_orders:
                     selected_row = evt.selection.rows[0]
                     order_id = int(df_orders.iloc[selected_row]["Order ID"])
                     st.session_state["edit_order_id"] = order_id
-                                        st.rerun()
+                    st.rerun()
             else:
                 st.info("No orders placed yet.")
 
@@ -1529,7 +1529,7 @@ with tab_expenses:
                     selected_row = evt.selection.rows[0]
                     expense_id = int(df_exp.iloc[selected_row]["ID"])
                     st.session_state["edit_expense_id"] = expense_id
-                                        st.rerun()
+                    st.rerun()
             else:
                 st.info("No expenses recorded yet. Click **Add New Expense** or Sync to load Google Sheet data.")
                 
