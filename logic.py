@@ -178,6 +178,34 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
     """Import data from Yaa.xlsx sheets into SQLite database using two-way merge."""
     import pandas as pd
     
+    def safe_int(val, default=0):
+        if pd.isna(val):
+            return default
+        from datetime import datetime
+        if isinstance(val, (pd.Timestamp, datetime)):
+            try:
+                return (val - pd.Timestamp('1899-12-31')).days
+            except:
+                return default
+        try:
+            return int(float(val))
+        except:
+            return default
+            
+    def safe_float(val, default=0.0):
+        if pd.isna(val):
+            return default
+        from datetime import datetime
+        if isinstance(val, (pd.Timestamp, datetime)):
+            try:
+                return float((val - pd.Timestamp('1899-12-31')).days)
+            except:
+                return default
+        try:
+            return float(val)
+        except:
+            return default
+
     # 1. Clear database and tombstones if requested
     if clear_db:
         session.query(StockLedger).delete()
@@ -211,9 +239,9 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 
             item_name = str(row['Item Name']).strip()
             item_name_arabic = str(row['Item Name Arabic']).strip() if not pd.isna(row['Item Name Arabic']) else ""
-            initial_qty = int(row['Initial Quantity']) if not pd.isna(row['Initial Quantity']) else 0
-            buying = float(row['Buying Price']) if not pd.isna(row['Buying Price']) else 0.0
-            selling = float(row['Selling Price']) if not pd.isna(row['Selling Price']) else 0.0
+            initial_qty = safe_int(row.get('Initial Quantity'))
+            buying = safe_float(row.get('Buying Price'))
+            selling = safe_float(row.get('Selling Price'))
             supplier = str(row['Supplier']).strip() if not pd.isna(row['Supplier']) else ""
             
             existing_prod = session.query(Product).filter(Product.sku == sku).first()
@@ -250,7 +278,7 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
     if 'Customers' in xl.sheet_names:
         df_cust = pd.read_excel(file_path, sheet_name='Customers')
         for _, row in df_cust.iterrows():
-            cust_id = int(row['Customer ID']) if not pd.isna(row['Customer ID']) else None
+            cust_id = safe_int(row.get('Customer ID'), None)
             phone = format_phone(row['Customer Phone Number'])
             name = str(row['Customer Name']).strip()
             address = str(row['Customer Address']).strip() if not pd.isna(row['Customer Address']) else ""
@@ -289,7 +317,7 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 ord_id = row.get(ord_col)
                 if pd.isna(ord_id):
                     continue
-                ord_id = int(ord_id)
+                ord_id = safe_int(ord_id)
                 
                 p_status = str(row.get('Payment Status')).strip()
                 if p_status.lower() == 'paied':
@@ -307,19 +335,19 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             order_no = row.get('Order No.') if 'Order No.' in df_orders.columns else row.get('Order ID')
             if pd.isna(order_no):
                 continue
-            order_no = int(order_no)
+            order_no = safe_int(order_no)
             
             if deleted_items.get("Order") and str(order_no) in deleted_items["Order"]:
                 continue
                 
-            cust_id = int(row.get('Customer ID')) if not pd.isna(row.get('Customer ID')) else None
+            cust_id = safe_int(row.get('Customer ID'), None)
             sku = str(row.get('SKU')).strip()
             
             qty_col = 'Order Quantity' if 'Order Quantity' in df_orders.columns else 'Quantity'
-            qty = int(row.get(qty_col)) if not pd.isna(row.get(qty_col)) else 1
+            qty = safe_int(row.get(qty_col), 1)
             
             amt_col = 'After Sale' if 'After Sale' in df_orders.columns else 'Total Amount'
-            total_amt = float(row.get(amt_col)) if not pd.isna(row.get(amt_col)) else 0.0
+            total_amt = safe_float(row.get(amt_col))
             
             date_col = 'Timestamp' if 'Timestamp' in df_orders.columns else 'Order Date'
             date_val = row.get(date_col)
@@ -378,7 +406,7 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             if not item_val:
                 continue
             
-            amount_val = float(row['Amount']) if not pd.isna(row['Amount']) else 0.0
+            amount_val = safe_float(row.get('Amount'))
             wallet_val = str(row['Wallet']).strip() if not pd.isna(row['Wallet']) else ""
             
             date_val = row['Day']
