@@ -13,13 +13,22 @@ import logic
 # ─── HELPER ──────────────────────────────────────────────────────────────────
 def load_settings():
     import json
+    apps_script_url = ""
+    try:
+        if "apps_script_url" in st.secrets:
+            apps_script_url = st.secrets["apps_script_url"]
+    except Exception:
+        pass
+        
     if os.path.exists("settings.json"):
         try:
             with open("settings.json", "r") as f:
-                return json.load(f)
-        except:
+                data = json.load(f)
+                if data.get("apps_script_url"):
+                    apps_script_url = data["apps_script_url"]
+        except Exception:
             pass
-    return {"apps_script_url": ""}
+    return {"apps_script_url": apps_script_url}
 
 def save_settings(settings):
     import json
@@ -860,6 +869,16 @@ with st.sidebar:
            - *Who has access*: `Anyone`
         8. Click **Deploy**, authorize permissions, and copy the **Web App URL**.
         9. Paste the URL in the box above!
+        
+        **🔒 Persistent Deployment (Streamlit Secrets)**:
+        Since Streamlit Community Cloud resets its container filesystem periodically (wiping local settings files), you must add this URL to your App Secrets to keep it permanently:
+        1. Go to your **Streamlit Cloud Dashboard**.
+        2. Click **Settings** next to your app -> **Secrets**.
+        3. Paste the following line:
+           ```toml
+           apps_script_url = "PASTE_YOUR_WEB_APP_URL_HERE"
+           ```
+        4. Click **Save**.
         """)
         
         apps_script_code = """function doPost(e) {
