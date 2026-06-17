@@ -753,12 +753,23 @@ def dialog_edit_order(order_id):
                 st.rerun()
             return
         first_order = orders[0]
+        
+        status_options = ["Pending","Confirmed","Dispatched","Delivered"]
+        status_idx = 0
+        if first_order.order_status in status_options:
+            status_idx = status_options.index(first_order.order_status)
+            
+        pay_options = ["Pending","Paid","Failed"]
+        pay_idx = 0
+        if first_order.payment_status in pay_options:
+            pay_idx = pay_options.index(first_order.payment_status)
+
         with st.form("edit_ord_form"):
-            order_status = st.selectbox("Fulfillment Status", ["Pending","Confirmed","Dispatched","Delivered"],
-                                        index=["Pending","Confirmed","Dispatched","Delivered"].index(first_order.order_status),
+            order_status = st.selectbox("Fulfillment Status", status_options,
+                                        index=status_idx,
                                         disabled=not is_admin)
-            payment_status = st.selectbox("Payment Status", ["Pending","Paid","Failed"],
-                                         index=["Pending","Paid","Failed"].index(first_order.payment_status),
+            payment_status = st.selectbox("Payment Status", pay_options,
+                                         index=pay_idx,
                                          disabled=not is_admin)
             
             c1, c2, c3 = st.columns(3)
@@ -1469,12 +1480,22 @@ with tab_orders:
             curr_pay = order_payments.get(sel_id, "Pending")
             st.info(f"**Fulfillment:** {curr_ord}  |  **Payment:** {curr_pay}")
             is_admin = (st.session_state.get("user_role") == "Admin")
+            status_options = ["Pending","Confirmed","Dispatched","Delivered"]
+            status_idx = 0
+            if curr_ord in status_options:
+                status_idx = status_options.index(curr_ord)
+                
+            pay_options = ["Pending","Paid","Failed"]
+            pay_idx = 0
+            if curr_pay in pay_options:
+                pay_idx = pay_options.index(curr_pay)
+
             with st.form("update_order_form"):
-                new_ord = st.selectbox("Update Fulfillment", ["Pending","Confirmed","Dispatched","Delivered"],
-                                       index=["Pending","Confirmed","Dispatched","Delivered"].index(curr_ord),
+                new_ord = st.selectbox("Update Fulfillment", status_options,
+                                       index=status_idx,
                                        disabled=not is_admin)
-                new_pay = st.selectbox("Update Payment", ["Pending","Paid","Failed"],
-                                       index=["Pending","Paid","Failed"].index(curr_pay),
+                new_pay = st.selectbox("Update Payment", pay_options,
+                                       index=pay_idx,
                                        disabled=not is_admin)
                 if is_admin:
                     if st.form_submit_button("Apply Changes", type="primary"):
