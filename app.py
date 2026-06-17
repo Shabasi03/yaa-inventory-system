@@ -8,6 +8,27 @@ import base64
 from collections import defaultdict
 from datetime import datetime
 
+import logging
+
+# Configure global logging to write to a local debug.log file and console
+log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s')
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# File handler (UTF-8 encoded to handle Arabic characters safely)
+file_handler = logging.FileHandler('debug.log', encoding='utf-8')
+file_handler.setFormatter(log_formatter)
+file_handler.setLevel(logging.INFO)
+root_logger.addHandler(file_handler)
+
+# Stream/console handler
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(log_formatter)
+console_handler.setLevel(logging.INFO)
+root_logger.addHandler(console_handler)
+
+logging.info("Yaa Core Inventory System started / initialized.")
+
 # Force reload models and logic to prevent Streamlit Cloud caching issues
 if "models" in sys.modules:
     try:
