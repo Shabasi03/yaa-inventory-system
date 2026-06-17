@@ -278,28 +278,33 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 session.flush()
 
     # 4. Import Orders
-    if 'Orders' in xl.sheet_names and 'Income' in xl.sheet_names:
+    if 'Orders' in xl.sheet_names:
         df_orders = pd.read_excel(file_path, sheet_name='Orders')
-        df_income = pd.read_excel(file_path, sheet_name='Income')
         
         income_map = {}
-        for _, row in df_income.iterrows():
-            ord_id = row['Order ID']
-            if pd.isna(ord_id):
-                continue
-            ord_id = int(ord_id)
-            
-            p_status = str(row['Payment Status']).strip()
-            if p_status.lower() == 'paied':
-                p_status = 'Paid'
+        if 'Income' in xl.sheet_names:
+            df_income = pd.read_excel(file_path, sheet_name='Income')
+            for _, row in df_income.iterrows():
+                ord_col = 'Order ID' if 'Order ID' in df_income.columns else 'Order No.'
+                ord_id = row.get(ord_col)
+                if pd.isna(ord_id):
+                    continue
+                ord_id = int(ord_id)
                 
-            income_map[ord_id] = {
-                'status': str(row['Order Status']).strip(),
-                'payment': p_status
-            }
-            
+                p_status = str(row.get('Payment Status')).strip()
+                if p_status.lower() == 'paied':
+                    p_status = 'Paid'
+                    
+                status_col = 'Order Status' if 'Order Status' in df_income.columns else 'Status'
+                status_val = str(row.get(status_col, 'Pending')).strip()
+                
+                income_map[ord_id] = {
+                    'status': status_val,
+                    'payment': p_status
+                }
+        
         for _, row in df_orders.iterrows():
-            order_no = row['Order No.']
+            order_no = row.get('Order No.') if 'Order No.' in df_orders.columns else row.get('Order ID')
             if pd.isna(order_no):
                 continue
             order_no = int(order_no)
@@ -307,12 +312,17 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             if deleted_items.get("Order") and str(order_no) in deleted_items["Order"]:
                 continue
                 
-            cust_id = int(row['Customer ID']) if not pd.isna(row['Customer ID']) else None
-            sku = str(row['SKU']).strip()
-            qty = int(row['Order Quantity']) if not pd.isna(row['Order Quantity']) else 1
-            total_amt = float(row['After Sale']) if not pd.isna(row['After Sale']) else 0.0
+            cust_id = int(row.get('Customer ID')) if not pd.isna(row.get('Customer ID')) else None
+            sku = str(row.get('SKU')).strip()
             
-            date_val = row['Timestamp']
+            qty_col = 'Order Quantity' if 'Order Quantity' in df_orders.columns else 'Quantity'
+            qty = int(row.get(qty_col)) if not pd.isna(row.get(qty_col)) else 1
+            
+            amt_col = 'After Sale' if 'After Sale' in df_orders.columns else 'Total Amount'
+            total_amt = float(row.get(amt_col)) if not pd.isna(row.get(amt_col)) else 0.0
+            
+            date_col = 'Timestamp' if 'Timestamp' in df_orders.columns else 'Order Date'
+            date_val = row.get(date_col)
             if pd.isna(date_val):
                 date_val = datetime.utcnow()
             elif isinstance(date_val, str):
@@ -324,7 +334,14 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                     except ValueError:
                         date_val = datetime.utcnow()
             
-            status_info = income_map.get(order_no, {'status': 'Pending', 'payment': 'Pending'})
+            if income_map:
+                status_info = income_map.get(order_no, {'status': 'Pending', 'payment': 'Pending'})
+            else:
+                o_status = str(row.get('Order Status', 'Pending')).strip()
+                p_status = str(row.get('Payment Status', 'Pending')).strip()
+                if p_status.lower() == 'paied':
+                    p_status = 'Paid'
+                status_info = {'status': o_status, 'payment': p_status}
             
             existing_order_item = session.query(Order).filter(Order.order_id == order_no, Order.sku == sku).first()
             if existing_order_item:
