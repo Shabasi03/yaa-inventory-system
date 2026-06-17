@@ -279,10 +279,17 @@ if os.path.exists(db_file):
 # ─── SEED DATA REMOVED (Source of truth is Google Sheets) ───
 
 # ─── GLOBAL BACKGROUND LOGIC ──────────────────────────────────────────────────
-bg_logo_base64 = ""
-if os.path.exists("yaa_logo.jpg"):
-    with open("yaa_logo.jpg", "rb") as f:
-        bg_logo_base64 = base64.b64encode(f.read()).decode()
+@st.cache_data
+def get_bg_logo_base64():
+    if os.path.exists("yaa_logo.jpg"):
+        try:
+            with open("yaa_logo.jpg", "rb") as f:
+                return base64.b64encode(f.read()).decode()
+        except Exception:
+            return ""
+    return ""
+
+bg_logo_base64 = get_bg_logo_base64()
 
 # ─── GLOBAL CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
