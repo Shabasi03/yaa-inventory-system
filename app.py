@@ -35,10 +35,10 @@ def style_zebra(df):
     
     header_styles = [
         {'selector': 'th', 'props': [
-            ('background-color', '#1a2b3c'),
-            ('color', '#f7f5f0'),
+            ('background-color', '#9DD2F2'),
+            ('color', '#0f172a'),
             ('font-weight', '700'),
-            ('border', '1px solid #23374d')
+            ('border', '1px solid #75a2bf')
         ]}
     ]
     return df.style.apply(get_row_styles, axis=1).set_table_styles(header_styles)
