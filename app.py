@@ -38,7 +38,65 @@ def save_settings(settings):
     except:
         pass
 
+import threading
+import time
+
+class BackgroundSyncManager:
+    _lock = threading.Lock()
+    _thread = None
+    _pending_export = False
+    _last_sync_time = 0.0
+
+    @classmethod
+    def start_sync_thread(cls):
+        with cls._lock:
+            if cls._thread is None or not cls._thread.is_alive():
+                cls._thread = threading.Thread(target=cls._run_sync_loop, daemon=True)
+                cls._thread.start()
+
+    @classmethod
+    def queue_export(cls):
+        cls._pending_export = True
+        cls.start_sync_thread()
+
+    @classmethod
+    def _run_sync_loop(cls):
+        cls._last_sync_time = time.time()
+        while True:
+            time.sleep(5)
+            now = time.time()
+            if now - cls._last_sync_time >= 300: # 5 minutes
+                # 1. Check for sheet updates
+                try:
+                    with get_session() as session:
+                        logic.check_google_sheet_updates(session, GSHEET_URL)
+                except Exception as e:
+                    import logging
+                    logging.error(f"Background check updates failed: {e}")
+                
+                # 2. Export local updates
+                if cls._pending_export:
+                    try:
+                        cls.sync_now_blocking()
+                    except Exception as e:
+                        import logging
+                        logging.error(f"Background sync export failed: {e}")
+                
+                cls._last_sync_time = time.time()
+
+    @classmethod
+    def sync_now_blocking(cls):
+        sync_to_google_sheet_if_configured_blocking()
+        cls._pending_export = False
+        cls._last_sync_time = time.time()
+
 def sync_to_google_sheet_if_configured():
+    BackgroundSyncManager.queue_export()
+
+BackgroundSyncManager.start_sync_thread()
+
+
+def sync_to_google_sheet_if_configured_blocking():
     settings = load_settings()
     url = settings.get("apps_script_url", "")
     if url:
@@ -60,6 +118,7 @@ def sync_to_google_sheet_if_configured():
                         f.write(current_hash)
                 except Exception:
                     pass
+
 
 def _format_ledger_reason(reason: str) -> str:
     if not reason:
@@ -438,21 +497,7 @@ if is_db_empty:
         with st.spinner("🔄 Initializing database from Google Sheets..."):
             perform_sync()
 
-# Periodically check for updates from Google Sheets (every 10 seconds)
-import time
-if "last_hash_check_time" not in st.session_state:
-    st.session_state["last_hash_check_time"] = 0
-
-if time.time() - st.session_state["last_hash_check_time"] > 10:
-    st.session_state["last_hash_check_time"] = time.time()
-    with get_session() as session:
-        try:
-            if logic.check_google_sheet_updates(session, GSHEET_URL):
-                st.session_state["last_sync"] = datetime.now()
-                st.cache_data.clear()
-                st.rerun()
-        except Exception:
-            pass
+# Network checks are deferred entirely to the background thread to prevent UI lag.
 
 # Hidden refresh trigger button and JS for 10 seconds auto-check
 col_hidden = st.columns([1])[0]
@@ -1591,6 +1636,11 @@ with tab_settings:
         st.info(f"👤 Currently logged in as: **{st.session_state.get('user_role', 'Unknown')}**")
     with c2:
         if st.button("🚪 Logout", type="primary", use_container_width=True, key="btn_logout"):
+            with st.spinner("Syncing pending changes to Google Sheet before logging out..."):
+                try:
+                    BackgroundSyncManager.sync_now_blocking()
+                except Exception as e:
+                    pass
             st.session_state["logged_in"] = False
             st.session_state["user_role"] = None
             st.rerun()
