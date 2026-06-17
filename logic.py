@@ -684,7 +684,8 @@ def sync_google_sheet(session: Session, url: str) -> bool:
         return True
     except Exception as e:
         import logging
-        logging.error(f"Error syncing Google Sheet: {e}")
+        import traceback
+        logging.error(f"Error syncing Google Sheet: {e}\n{traceback.format_exc()}")
         if 'temp_path' in locals() and os.path.exists(temp_path):
             try:
                 os.remove(temp_path)
@@ -848,7 +849,8 @@ def check_google_sheet_updates(session: Session, url: str) -> bool:
         return False
     except Exception as e:
         import logging
-        logging.error(f"Error checking Google Sheet updates: {e}")
+        import traceback
+        logging.error(f"Error checking Google Sheet updates: {e}\n{traceback.format_exc()}")
         return False
 
 
