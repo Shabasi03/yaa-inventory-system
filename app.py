@@ -32,7 +32,16 @@ def style_zebra(df):
     def get_row_styles(row):
         bg = 'background-color: #f8fafc' if row.name % 2 == 0 else 'background-color: #f1f5f9'
         return [bg] * len(row)
-    return df.style.apply(get_row_styles, axis=1)
+    
+    header_styles = [
+        {'selector': 'th', 'props': [
+            ('background-color', '#1a2b3c'),
+            ('color', '#f7f5f0'),
+            ('font-weight', '700'),
+            ('border', '1px solid #23374d')
+        ]}
+    ]
+    return df.style.apply(get_row_styles, axis=1).set_table_styles(header_styles)
 
 # ─── PAGE CONFIG ─────────────────────────────────────────────────────────────
 st.set_page_config(
