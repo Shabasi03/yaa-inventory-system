@@ -1620,7 +1620,7 @@ with tab_products:
         if st.button("📥 Restock Product", width='stretch'):
             dialog_restock()
     with btn_col3:
-        if st.button("📥 Batch Insert", width='stretch'):
+        if st.button("📥 Batch Insert", key="btn_batch_insert_products", width='stretch'):
             dialog_batch_insert_products()
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1924,7 +1924,7 @@ with tab_expenses:
                 if st.button("➕ Add New Expense", type="primary", width='stretch'):
                     dialog_add_expense()
             with ex_col2:
-                if st.button("📥 Batch Insert", width='stretch'):
+                if st.button("📥 Batch Insert", key="btn_batch_insert_expenses", width='stretch'):
                     dialog_batch_insert_expenses()
                 
         with col_settle:
