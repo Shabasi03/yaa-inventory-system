@@ -63,6 +63,7 @@ class BackgroundSyncManager:
     _thread = None
     _pending_export = False
     _last_sync_time = 0.0
+    _gsheet_url = "https://docs.google.com/spreadsheets/d/1goeE1w9QaDuTGXcj1EEClj14gPC_3xRL8wZIU9lFOlY/edit?usp=sharing"
 
     @classmethod
     def start_sync_thread(cls):
@@ -86,7 +87,7 @@ class BackgroundSyncManager:
                 # 1. Check for sheet updates
                 try:
                     with get_session() as session:
-                        logic.check_google_sheet_updates(session, GSHEET_URL)
+                        logic.check_google_sheet_updates(session, cls._gsheet_url)
                 except Exception as e:
                     import logging
                     logging.error(f"Background check updates failed: {e}")
