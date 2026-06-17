@@ -250,6 +250,12 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             
             existing_prod = session.query(Product).filter(Product.sku == sku).first()
             if existing_prod:
+                try:
+                    session.refresh(existing_prod)
+                except Exception:
+                    existing_prod = None
+                    
+            if existing_prod:
                 existing_prod.item_name = item_name
                 existing_prod.item_name_arabic = item_name_arabic
                 existing_prod.initial_quantity = initial_qty
@@ -297,6 +303,12 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 continue
                 
             existing_cust = session.query(Customer).filter(Customer.customer_phone_number == phone).first()
+            if existing_cust:
+                try:
+                    session.refresh(existing_cust)
+                except Exception:
+                    existing_cust = None
+                    
             if existing_cust:
                 existing_cust.customer_name = name
                 existing_cust.customer_address = address
@@ -379,6 +391,12 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 status_info = {'status': o_status, 'payment': p_status}
             
             existing_order_item = session.query(Order).filter(Order.order_id == order_no, Order.sku == sku).first()
+            if existing_order_item:
+                try:
+                    session.refresh(existing_order_item)
+                except Exception:
+                    existing_order_item = None
+                    
             if existing_order_item:
                 existing_order_item.customer_id = cust_id
                 existing_order_item.quantity = qty
@@ -485,6 +503,12 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 
             existing_settle = session.query(DebtSettlement).filter(DebtSettlement.settlement_id == settle_id).first()
             if existing_settle:
+                try:
+                    session.refresh(existing_settle)
+                except Exception:
+                    existing_settle = None
+                    
+            if existing_settle:
                 existing_settle.amount = amount_val
                 existing_settle.date = date_val
                 existing_settle.notes = notes_val
@@ -521,6 +545,12 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 date_val = date_val.to_pydatetime()
                 
             existing_log = session.query(ActionLog).filter(ActionLog.log_id == log_id).first()
+            if existing_log:
+                try:
+                    session.refresh(existing_log)
+                except Exception:
+                    existing_log = None
+                    
             if existing_log:
                 existing_log.username = username_val
                 existing_log.action = action_val
