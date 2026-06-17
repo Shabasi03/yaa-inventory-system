@@ -230,19 +230,23 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
     if 'Products' in xl.sheet_names:
         df_prod = pd.read_excel(xl, sheet_name='Products')
         for _, row in df_prod.iterrows():
-            sku = str(row['SKU']).strip()
-            if not sku or pd.isna(row['SKU']):
+            sku_val = row.get('SKU')
+            sku = str(sku_val).strip() if not pd.isna(sku_val) else ""
+            if not sku:
                 continue
                 
             if deleted_items.get("Product") and sku in deleted_items["Product"]:
                 continue
                 
-            item_name = str(row['Item Name']).strip()
-            item_name_arabic = str(row['Item Name Arabic']).strip() if not pd.isna(row['Item Name Arabic']) else ""
+            item_name_val = row.get('Item Name')
+            item_name = str(item_name_val).strip() if not pd.isna(item_name_val) else ""
+            item_name_arabic_val = row.get('Item Name Arabic')
+            item_name_arabic = str(item_name_arabic_val).strip() if not pd.isna(item_name_arabic_val) else ""
             initial_qty = safe_int(row.get('Initial Quantity'))
             buying = safe_float(row.get('Buying Price'))
             selling = safe_float(row.get('Selling Price'))
-            supplier = str(row['Supplier']).strip() if not pd.isna(row['Supplier']) else ""
+            supplier_val = row.get('Supplier')
+            supplier = str(supplier_val).strip() if not pd.isna(supplier_val) else ""
             
             existing_prod = session.query(Product).filter(Product.sku == sku).first()
             if existing_prod:
@@ -279,9 +283,12 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
         df_cust = pd.read_excel(xl, sheet_name='Customers')
         for _, row in df_cust.iterrows():
             cust_id = safe_int(row.get('Customer ID'), None)
-            phone = format_phone(row['Customer Phone Number'])
-            name = str(row['Customer Name']).strip()
-            address = str(row['Customer Address']).strip() if not pd.isna(row['Customer Address']) else ""
+            phone_val = row.get('Customer Phone Number')
+            phone = format_phone(phone_val) if not pd.isna(phone_val) else ""
+            name_val = row.get('Customer Name')
+            name = str(name_val).strip() if not pd.isna(name_val) else ""
+            address_val = row.get('Customer Address')
+            address = str(address_val).strip() if not pd.isna(address_val) else ""
             
             if not phone or not name:
                 continue
@@ -402,14 +409,16 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             df_exp['Day'] = df_exp['Day'].ffill()
         
         for _, row in df_exp.iterrows():
-            item_val = str(row['Item']).strip() if not pd.isna(row['Item']) else ""
+            item_val_raw = row.get('Item')
+            item_val = str(item_val_raw).strip() if not pd.isna(item_val_raw) else ""
             if not item_val:
                 continue
             
             amount_val = safe_float(row.get('Amount'))
-            wallet_val = str(row['Wallet']).strip() if not pd.isna(row['Wallet']) else ""
+            wallet_val_raw = row.get('Wallet')
+            wallet_val = str(wallet_val_raw).strip() if not pd.isna(wallet_val_raw) else ""
             
-            date_val = row['Day']
+            date_val = row.get('Day')
             if pd.isna(date_val):
                 date_val = datetime.utcnow()
             elif isinstance(date_val, str):
@@ -460,7 +469,8 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 continue
                 
             amount_val = safe_float(row.get('Amount'))
-            notes_val = str(row['Notes']).strip() if not pd.isna(row['Notes']) else ""
+            notes_val_raw = row.get('Notes')
+            notes_val = str(notes_val_raw).strip() if not pd.isna(notes_val_raw) else ""
             
             date_val = row.get('Date')
             if pd.isna(date_val):
