@@ -809,13 +809,15 @@ tabs_list = [
 is_admin_user = (st.session_state.get("user_role") == "Admin")
 if is_admin_user:
     tabs_list.append("🕵️ Audit Logs")
+tabs_list.append("⚙️ Settings")
 
 tabs = st.tabs(tabs_list)
 
 if is_admin_user:
-    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses, tab_logs = tabs
+    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses, tab_logs, tab_settings = tabs
 else:
-    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses = tabs
+    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses, tab_settings = tabs
+
 
 
 # ─── SIDEBAR (Excel import only) ──────────────────────────────────────────────
@@ -1577,6 +1579,23 @@ if is_admin_user:
                 st.dataframe(style_zebra(pd.DataFrame(log_data)), use_container_width=True, hide_index=True)
             else:
                 st.info("No system actions logged yet.")
+
+with tab_settings:
+    st.markdown("""
+    <div class="section-header">
+        <h2>⚙️ Settings & Session</h2>
+        <p>Manage your login session, active parameters, and configuration options.</p>
+    </div>""", unsafe_allow_html=True)
+    
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        st.info(f"👤 Currently logged in as: **{st.session_state.get('user_role', 'Unknown')}**")
+    with c2:
+        if st.button("🚪 Logout", type="primary", use_container_width=True, key="btn_logout"):
+            st.session_state["logged_in"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
+
 
 
 
