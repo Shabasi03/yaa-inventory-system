@@ -169,22 +169,7 @@ if os.path.exists(db_file):
         st.cache_data.clear()
         st.rerun()
 
-# ─── SEED DATA ────────────────────────────────────────────────────────────────
-with get_session() as session:
-    if session.query(Product).count() == 0:
-        try:
-            logic.add_product(session, "APP-14",  "iPhone 14 Pro",     "آيفون ١٤ برو",              8,  800.0,  999.0, "Apple Inc.")
-            logic.add_product(session, "GAL-S23", "Samsung Galaxy S23", "سامسونج جالكسي إس ٢٣",    12,  700.0,  899.0, "Samsung Electronics")
-            logic.add_product(session, "MAC-M2",  "MacBook Air M2",     "ماك بوك إير إم ٢",          3, 1000.0, 1299.0, "Apple Inc.")
-            logic.add_customer(session, "Ahmad Mansoor",  "+966500000001", "Riyadh, KSA")
-            logic.add_customer(session, "Fatima Al-Harbi", "+966500000002", "Jeddah, KSA")
-            session.commit()
-            try:
-                sync_to_google_sheet_if_configured()
-            except Exception:
-                pass
-        except Exception:
-            pass
+# ─── SEED DATA REMOVED (Source of truth is Google Sheets) ───
 
 # ─── GLOBAL BACKGROUND LOGIC ──────────────────────────────────────────────────
 bg_logo_base64 = ""
