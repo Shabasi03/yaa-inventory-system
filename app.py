@@ -6,7 +6,7 @@ import base64
 from collections import defaultdict
 from datetime import datetime
 from database import init_db, get_session
-from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement, ActionLog
+from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement, ActionLog, DeletedRecord
 import logic
 
 
@@ -642,6 +642,7 @@ def dialog_edit_product(sku):
                 session.query(StockLedger).filter(StockLedger.sku == sku).delete()
                 session.query(Order).filter(Order.sku == sku).delete()
                 session.delete(product)
+                session.add(DeletedRecord(entity_type="Product", entity_key=sku))
                 session.commit()
                 try:
                     sync_to_google_sheet_if_configured()
@@ -707,6 +708,7 @@ def dialog_edit_customer(cust_id):
                 # Clear dependencies
                 session.query(Order).filter(Order.customer_id == cust_id).delete()
                 session.delete(customer)
+                session.add(DeletedRecord(entity_type="Customer", entity_key=str(cust_id)))
                 session.commit()
                 try:
                     sync_to_google_sheet_if_configured()
@@ -776,6 +778,7 @@ def dialog_edit_order(order_id):
                     if o.order_status == 'Delivered':
                         logic._revert_stock_deduction_for_order(session, o)
                     session.delete(o)
+                session.add(DeletedRecord(entity_type="Order", entity_key=str(order_id)))
                 session.commit()
                 try:
                     sync_to_google_sheet_if_configured()
@@ -844,7 +847,10 @@ def dialog_edit_expense(expense_id):
                 st.rerun()
             elif deleted:
                 logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Delete Expense", f"ID: {expense_id}, Item: {expense.item}, Amount: {expense.amount}")
+                day_str = expense.day.strftime("%Y-%m-%d") if expense.day else ""
+                key_str = f"{day_str}|{expense.item}|{expense.wallet or ''}|{expense.amount}"
                 session.delete(expense)
+                session.add(DeletedRecord(entity_type="Expense", entity_key=key_str))
                 session.commit()
                 try:
                     sync_to_google_sheet_if_configured()

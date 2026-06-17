@@ -1,4 +1,4 @@
-from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement, ActionLog
+from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement, ActionLog, DeletedRecord
 from sqlalchemy.orm import Session
 from datetime import datetime
 
@@ -175,10 +175,10 @@ def _revert_stock_deduction_for_order(session: Session, order: Order):
         session.delete(existing_ledger)
 
 def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
-    """Import data from Yaa.xlsx sheets into SQLite database."""
+    """Import data from Yaa.xlsx sheets into SQLite database using two-way merge."""
     import pandas as pd
     
-    # 1. Clear database if requested
+    # 1. Clear database and tombstones if requested
     if clear_db:
         session.query(StockLedger).delete()
         session.query(Order).delete()
@@ -186,7 +186,15 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
         session.query(Product).delete()
         session.query(Expense).delete()
         session.query(DebtSettlement).delete()
+        session.query(DeletedRecord).delete()
         session.flush()
+        
+    # Load deleted records
+    deleted_items = {}
+    for r in session.query(DeletedRecord).all():
+        if r.entity_type not in deleted_items:
+            deleted_items[r.entity_type] = set()
+        deleted_items[r.entity_type].add(r.entity_key)
         
     xl = pd.ExcelFile(file_path)
     
@@ -197,6 +205,10 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             sku = str(row['SKU']).strip()
             if not sku or pd.isna(row['SKU']):
                 continue
+                
+            if deleted_items.get("Product") and sku in deleted_items["Product"]:
+                continue
+                
             item_name = str(row['Item Name']).strip()
             item_name_arabic = str(row['Item Name Arabic']).strip() if not pd.isna(row['Item Name Arabic']) else ""
             initial_qty = int(row['Initial Quantity']) if not pd.isna(row['Initial Quantity']) else 0
@@ -205,7 +217,14 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             supplier = str(row['Supplier']).strip() if not pd.isna(row['Supplier']) else ""
             
             existing_prod = session.query(Product).filter(Product.sku == sku).first()
-            if not existing_prod:
+            if existing_prod:
+                existing_prod.item_name = item_name
+                existing_prod.item_name_arabic = item_name_arabic
+                existing_prod.initial_quantity = initial_qty
+                existing_prod.buying_price = buying
+                existing_prod.selling_price = selling
+                existing_prod.supplier = supplier
+            else:
                 add_product(
                     session=session,
                     sku=sku,
@@ -224,7 +243,6 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
         s = str(val).strip()
         if s.endswith('.0'):
             s = s[:-2]
-        # Egyptian mobile numbers are 11 digits starting with 01
         if len(s) == 10 and s.startswith('1'):
             s = '0' + s
         return s
@@ -240,8 +258,16 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             if not phone or not name:
                 continue
                 
+            if cust_id and deleted_items.get("Customer") and str(cust_id) in deleted_items["Customer"]:
+                continue
+                
             existing_cust = session.query(Customer).filter(Customer.customer_phone_number == phone).first()
-            if not existing_cust:
+            if existing_cust:
+                existing_cust.customer_name = name
+                existing_cust.customer_address = address
+                if cust_id:
+                    existing_cust.customer_id = cust_id
+            else:
                 customer = Customer(
                     customer_id=cust_id,
                     customer_phone_number=phone,
@@ -278,6 +304,9 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                 continue
             order_no = int(order_no)
             
+            if deleted_items.get("Order") and str(order_no) in deleted_items["Order"]:
+                continue
+                
             cust_id = int(row['Customer ID']) if not pd.isna(row['Customer ID']) else None
             sku = str(row['SKU']).strip()
             qty = int(row['Order Quantity']) if not pd.isna(row['Order Quantity']) else 1
@@ -297,17 +326,29 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             
             status_info = income_map.get(order_no, {'status': 'Pending', 'payment': 'Pending'})
             
-            create_order(
-                session=session,
-                customer_id=cust_id,
-                sku=sku,
-                quantity=qty,
-                total_amount=total_amt,
-                order_status=status_info['status'],
-                payment_status=status_info['payment'],
-                order_date=date_val,
-                order_id=order_no
-            )
+            existing_order_item = session.query(Order).filter(Order.order_id == order_no, Order.sku == sku).first()
+            if existing_order_item:
+                existing_order_item.customer_id = cust_id
+                existing_order_item.quantity = qty
+                existing_order_item.total_amount = total_amt
+                existing_order_item.order_status = status_info['status']
+                existing_order_item.payment_status = status_info['payment']
+                if hasattr(date_val, 'to_pydatetime'):
+                    existing_order_item.order_date = date_val.to_pydatetime()
+                else:
+                    existing_order_item.order_date = date_val
+            else:
+                create_order(
+                    session=session,
+                    customer_id=cust_id,
+                    sku=sku,
+                    quantity=qty,
+                    total_amount=total_amt,
+                    order_status=status_info['status'],
+                    payment_status=status_info['payment'],
+                    order_date=date_val,
+                    order_id=order_no
+                )
 
     # 5. Import Expenses
     if 'Expenses' in xl.sheet_names:
@@ -334,15 +375,36 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
             elif hasattr(date_val, 'to_pydatetime'):
                 date_val = date_val.to_pydatetime()
             
-            expense = Expense(
-                day=date_val,
-                item=item_val,
-                wallet=wallet_val,
-                amount=amount_val
-            )
-            session.add(expense)
+            day_str = date_val.strftime("%Y-%m-%d")
+            key_str = f"{day_str}|{item_val}|{wallet_val}|{amount_val}"
+            
+            if deleted_items.get("Expense") and key_str in deleted_items["Expense"]:
+                continue
+                
+            existing_exp = session.query(Expense).filter(
+                Expense.item == item_val,
+                Expense.amount == amount_val,
+                Expense.wallet == wallet_val
+            ).all()
+            
+            match_found = False
+            for e in existing_exp:
+                e_day_str = e.day.strftime("%Y-%m-%d") if e.day else ""
+                if e_day_str == day_str:
+                    match_found = True
+                    break
+                    
+            if not match_found:
+                expense = Expense(
+                    day=date_val,
+                    item=item_val,
+                    wallet=wallet_val,
+                    amount=amount_val
+                )
+                session.add(expense)
     
     xl.close()
+
 
 
 # --- FINANCIAL & REPORTING LOGIC ---
@@ -570,7 +632,7 @@ def sync_google_sheet(session: Session, url: str) -> bool:
         urllib.request.install_opener(opener)
         
         urllib.request.urlretrieve(export_url, temp_path)
-        import_excel_data(session, temp_path, clear_db=True)
+        import_excel_data(session, temp_path, clear_db=False)
         
         if os.path.exists(temp_path):
             os.remove(temp_path)
@@ -731,7 +793,7 @@ def check_google_sheet_updates(session: Session, url: str) -> bool:
             with open(temp_path, "wb") as f:
                 f.write(data)
                 
-            import_excel_data(session, temp_path, clear_db=True)
+            import_excel_data(session, temp_path, clear_db=False)
             
             if os.path.exists(temp_path):
                 try:

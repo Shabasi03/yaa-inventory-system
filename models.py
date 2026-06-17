@@ -81,3 +81,11 @@ class ActionLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
     details = Column(String(500))
 
+class DeletedRecord(Base):
+    __tablename__ = 'deleted_records'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    entity_type = Column(String(50), nullable=False)
+    entity_key = Column(String(255), nullable=False)
+
+
