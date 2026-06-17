@@ -1,10 +1,25 @@
 import re
 import os
+import sys
+import importlib
 import streamlit as st
 import pandas as pd
 import base64
 from collections import defaultdict
 from datetime import datetime
+
+# Force reload models and logic to prevent Streamlit Cloud caching issues
+if "models" in sys.modules:
+    try:
+        importlib.reload(sys.modules["models"])
+    except:
+        pass
+if "logic" in sys.modules:
+    try:
+        importlib.reload(sys.modules["logic"])
+    except:
+        pass
+
 from database import init_db, get_session
 from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement, ActionLog, DeletedRecord
 import logic
