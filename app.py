@@ -881,7 +881,11 @@ with st.sidebar:
         4. Click **Save**.
         """)
         
-        apps_script_code = """function doPost(e) {
+        apps_script_code = """function doGet(e) {
+  return HtmlService.createHtmlOutput("<h1>YAA Inventory Webhook Active</h1><p>This Apps Script Web App is working and ready to receive updates from your Streamlit inventory system via POST requests.</p>");
+}
+
+function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -905,6 +909,7 @@ with st.sidebar:
   }
 }"""
         st.code(apps_script_code, language="javascript")
+
 
     st.markdown("---")
     st.info("Connected to local SQLite database: `inventory.db`")
