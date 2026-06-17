@@ -1528,17 +1528,16 @@ with tab_expenses:
             expenses = session.query(Expense).order_by(Expense.day.desc(), Expense.expense_id.desc()).all()
             if expenses:
                 exp_data = [{
-                    "ID": e.expense_id,
-                    "Date": e.day.strftime("%Y-%m-%d") if e.day else "—",
-                    "Expense Item": e.item,
-                    "Wallet / Account": e.wallet or "—",
-                    "Amount (EGP)": f"EGP {e.amount:,.2f}"
+                    "Day": e.day.strftime("%Y-%m-%d") if e.day else "—",
+                    "Item": e.item,
+                    "Wallet": e.wallet or "—",
+                    "Amount": f"EGP {e.amount:,.2f}"
                 } for e in expenses]
                 df_exp = pd.DataFrame(exp_data)
                 evt = st.dataframe(style_zebra(df_exp), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"exp_df_{st.session_state.exp_df_ver}")
                 if evt and evt.selection and evt.selection.rows:
                     selected_row = evt.selection.rows[0]
-                    expense_id = int(df_exp.iloc[selected_row]["ID"])
+                    expense_id = expenses[selected_row].expense_id
                     st.session_state["edit_expense_id"] = expense_id
                     st.rerun()
             else:
