@@ -965,10 +965,29 @@ function doPost(e) {
 # ─── DIALOG: Add New Product ──────────────────────────────────────────────────
 @st.dialog("📦 Add New Product", width="large")
 def dialog_add_product():
+    with get_session() as session:
+        import datetime
+        now = datetime.datetime.now()
+        yy = str(now.year)[-2:]
+        m = str(now.month)
+        prefix = f"Y{yy}{m}"
+        
+        products = session.query(Product).all()
+        max_counter = 0
+        for p in products:
+            if p.sku and p.sku.startswith(prefix):
+                suffix = p.sku[len(prefix):]
+                if suffix.isdigit():
+                    val = int(suffix)
+                    if val > max_counter:
+                        max_counter = val
+        next_counter = max_counter + 1
+        auto_sku = f"{prefix}{next_counter:02d}"
+
     with st.form("dlg_new_product_form", clear_on_submit=True):
         c1, c2 = st.columns(2)
         with c1:
-            sku = st.text_input("SKU Code *", placeholder="APP-15").strip()
+            sku = st.text_input("SKU Code *", value=auto_sku, help="Auto-generated using pattern Y-YY-M-DD").strip()
             item_name = st.text_input("Item Name (English) *", placeholder="iPhone 15 Pro")
             initial_quantity = st.number_input("Initial Quantity", min_value=0, value=10, step=1)
             supplier = st.text_input("Supplier Company", placeholder="Apple Distribution")
