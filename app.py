@@ -1514,42 +1514,43 @@ def dialog_new_order(cust_options, prod_options):
 
         submitted = st.form_submit_button("🛒 Submit Order", type="primary", width='stretch')
         if submitted:
-            with get_session() as session:
-                try:
-                    product_ref = session.query(Product).filter(Product.sku == selected_sku).first()
-                    total_cost  = float(product_ref.selling_price * quantity)
+            with st.spinner("Processing Order... Please wait..."):
+                with get_session() as session:
+                    try:
+                        product_ref = session.query(Product).filter(Product.sku == selected_sku).first()
+                        total_cost  = float(product_ref.selling_price * quantity)
 
-                    if product_ref.initial_quantity < quantity and order_status == "Delivered":
-                        st.error(f"Insufficient stock for '{product_ref.item_name}' "
-                                 f"(Available: {product_ref.initial_quantity}).")
-                    else:
-                        new_order = logic.create_order(
-                            session=session,
-                            customer_id=selected_cust_id,
-                            sku=selected_sku,
-                            quantity=quantity,
-                            total_amount=total_cost,
-                            order_status=order_status,
-                            payment_status=payment_status,
-                        )
-                        logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Create Order", f"Order #{new_order.order_id}: SKU={selected_sku}, Qty={quantity}, Status={order_status}")
-                        session.commit()
-                        try:
-                            sync_to_google_sheet_if_configured()
-                        except Exception:
-                            pass
-                        # Generate PDF receipt
-                        try:
-                            pdf_bytes = logic.generate_receipt_pdf(session, new_order.order_id)
-                            st.session_state["receipt_pdf"]      = pdf_bytes
-                            st.session_state["receipt_order_id"] = new_order.order_id
-                        except Exception as pdf_err:
-                            st.session_state.pop("receipt_pdf", None)
-                            st.warning(f"Order saved, PDF failed: {pdf_err}")
-                        st.success(f"✅ Order #{new_order.order_id} created! Total: EGP {total_cost:,.2f}")
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"Order error: {e}")
+                        if product_ref.initial_quantity < quantity and order_status == "Delivered":
+                            st.error(f"Insufficient stock for '{product_ref.item_name}' "
+                                     f"(Available: {product_ref.initial_quantity}).")
+                        else:
+                            new_order = logic.create_order(
+                                session=session,
+                                customer_id=selected_cust_id,
+                                sku=selected_sku,
+                                quantity=quantity,
+                                total_amount=total_cost,
+                                order_status=order_status,
+                                payment_status=payment_status,
+                            )
+                            logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Create Order", f"Order #{new_order.order_id}: SKU={selected_sku}, Qty={quantity}, Status={order_status}")
+                            session.commit()
+                            try:
+                                sync_to_google_sheet_if_configured()
+                            except Exception:
+                                pass
+                            # Generate PDF receipt
+                            try:
+                                pdf_bytes = logic.generate_receipt_pdf(session, new_order.order_id)
+                                st.session_state["receipt_pdf"]      = pdf_bytes
+                                st.session_state["receipt_order_id"] = new_order.order_id
+                            except Exception as pdf_err:
+                                st.session_state.pop("receipt_pdf", None)
+                                st.warning(f"Order saved, PDF failed: {pdf_err}")
+                            st.success(f"✅ Order #{new_order.order_id} created! Total: EGP {total_cost:,.2f}")
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"Order error: {e}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
