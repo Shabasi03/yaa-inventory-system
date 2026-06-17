@@ -228,7 +228,7 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
     
     # 2. Import Products
     if 'Products' in xl.sheet_names:
-        df_prod = pd.read_excel(file_path, sheet_name='Products')
+        df_prod = pd.read_excel(xl, sheet_name='Products')
         for _, row in df_prod.iterrows():
             sku = str(row['SKU']).strip()
             if not sku or pd.isna(row['SKU']):
@@ -276,7 +276,7 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
         return s
 
     if 'Customers' in xl.sheet_names:
-        df_cust = pd.read_excel(file_path, sheet_name='Customers')
+        df_cust = pd.read_excel(xl, sheet_name='Customers')
         for _, row in df_cust.iterrows():
             cust_id = safe_int(row.get('Customer ID'), None)
             phone = format_phone(row['Customer Phone Number'])
@@ -307,11 +307,11 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
 
     # 4. Import Orders
     if 'Orders' in xl.sheet_names:
-        df_orders = pd.read_excel(file_path, sheet_name='Orders')
+        df_orders = pd.read_excel(xl, sheet_name='Orders')
         
         income_map = {}
         if 'Income' in xl.sheet_names:
-            df_income = pd.read_excel(file_path, sheet_name='Income')
+            df_income = pd.read_excel(xl, sheet_name='Income')
             for _, row in df_income.iterrows():
                 ord_col = 'Order ID' if 'Order ID' in df_income.columns else 'Order No.'
                 ord_id = row.get(ord_col)
@@ -397,7 +397,7 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
 
     # 5. Import Expenses
     if 'Expenses' in xl.sheet_names:
-        df_exp = pd.read_excel(file_path, sheet_name='Expenses')
+        df_exp = pd.read_excel(xl, sheet_name='Expenses')
         if 'Day' in df_exp.columns:
             df_exp['Day'] = df_exp['Day'].ffill()
         
@@ -447,6 +447,84 @@ def import_excel_data(session: Session, file_path: str, clear_db: bool = True):
                     amount=amount_val
                 )
                 session.add(expense)
+
+    # 6. Import Debt Settlements
+    if 'DebtSettlements' in xl.sheet_names:
+        df_settle = pd.read_excel(xl, sheet_name='DebtSettlements')
+        for _, row in df_settle.iterrows():
+            settle_id = safe_int(row.get('Settlement ID'), None)
+            if not settle_id:
+                continue
+                
+            if deleted_items.get("DebtSettlement") and str(settle_id) in deleted_items["DebtSettlement"]:
+                continue
+                
+            amount_val = safe_float(row.get('Amount'))
+            notes_val = str(row['Notes']).strip() if not pd.isna(row['Notes']) else ""
+            
+            date_val = row.get('Date')
+            if pd.isna(date_val):
+                date_val = datetime.utcnow()
+            elif isinstance(date_val, str):
+                try:
+                    date_val = datetime.strptime(date_val, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    date_val = datetime.utcnow()
+            elif hasattr(date_val, 'to_pydatetime'):
+                date_val = date_val.to_pydatetime()
+                
+            existing_settle = session.query(DebtSettlement).filter(DebtSettlement.settlement_id == settle_id).first()
+            if existing_settle:
+                existing_settle.amount = amount_val
+                existing_settle.date = date_val
+                existing_settle.notes = notes_val
+            else:
+                new_settle = DebtSettlement(
+                    settlement_id=settle_id,
+                    amount=amount_val,
+                    date=date_val,
+                    notes=notes_val
+                )
+                session.add(new_settle)
+
+    # 7. Import Action Logs
+    if 'ActionLogs' in xl.sheet_names:
+        df_logs = pd.read_excel(xl, sheet_name='ActionLogs')
+        for _, row in df_logs.iterrows():
+            log_id = safe_int(row.get('Log ID'), None)
+            if not log_id:
+                continue
+                
+            username_val = str(row.get('Username')).strip()
+            action_val = str(row.get('Action')).strip()
+            details_val = str(row.get('Details')).strip() if not pd.isna(row.get('Details')) else ""
+            
+            date_val = row.get('Timestamp')
+            if pd.isna(date_val):
+                date_val = datetime.utcnow()
+            elif isinstance(date_val, str):
+                try:
+                    date_val = datetime.strptime(date_val, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    date_val = datetime.utcnow()
+            elif hasattr(date_val, 'to_pydatetime'):
+                date_val = date_val.to_pydatetime()
+                
+            existing_log = session.query(ActionLog).filter(ActionLog.log_id == log_id).first()
+            if existing_log:
+                existing_log.username = username_val
+                existing_log.action = action_val
+                existing_log.details = details_val
+                existing_log.timestamp = date_val
+            else:
+                new_log = ActionLog(
+                    log_id=log_id,
+                    username=username_val,
+                    action=action_val,
+                    details=details_val,
+                    timestamp=date_val
+                )
+                session.add(new_log)
     
     xl.close()
 
@@ -679,8 +757,12 @@ def sync_google_sheet(session: Session, url: str) -> bool:
         urllib.request.urlretrieve(export_url, temp_path)
         import_excel_data(session, temp_path, clear_db=False)
         
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
+        try:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        except Exception as cleanup_err:
+            import logging
+            logging.warning(f"Failed to delete temp file {temp_path}: {cleanup_err}")
         return True
     except Exception as e:
         import logging

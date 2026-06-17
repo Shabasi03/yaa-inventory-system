@@ -1076,6 +1076,161 @@ def dialog_add_product():
                         st.error(f"Error: {e}")
 
 
+# ─── DIALOG: Batch Insert Products ────────────────────────────────────────────
+@st.dialog("📥 Batch Insert Products", width="large")
+def dialog_batch_insert_products():
+    import io
+    st.write("Register multiple products at once. Choose a paste method or upload a file.")
+    
+    with st.expander("ℹ️ Column Names & Guidelines"):
+        st.write("""
+        **Required Columns:**
+        - `SKU`: Unique product identifier (e.g. Y26611)
+        - `Item Name`: English name of the product
+        
+        **Optional Columns:**
+        - `Item Name Arabic` / `Arabic Name`
+        - `Initial Quantity` / `Qty` / `Stock` (defaults to 0)
+        - `Buying Price` (defaults to 0.0)
+        - `Selling Price` (defaults to 0.0)
+        - `Supplier`
+        """)
+        
+    t1, t2 = st.tabs(["📋 Paste Data", "📤 Upload CSV/Excel"])
+    df = None
+    
+    with t1:
+        pasted_text = st.text_area("Paste tab-separated or comma-separated rows here (including header row):", height=200, placeholder="SKU\tItem Name\tInitial Quantity\tBuying Price\tSelling Price\nY26611\tTest Product\t10\t100\t150")
+        if pasted_text.strip():
+            try:
+                df = pd.read_csv(io.StringIO(pasted_text.strip()), sep=None, engine='python')
+            except Exception as e:
+                st.error(f"Failed to parse text: {e}")
+                
+    with t2:
+        uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"], key="prod_batch_uploader")
+        if uploaded_file is not None:
+            try:
+                if uploaded_file.name.endswith('.csv'):
+                    df = pd.read_csv(uploaded_file)
+                else:
+                    df = pd.read_excel(uploaded_file)
+            except Exception as e:
+                st.error(f"Failed to read file: {e}")
+                
+    if df is not None:
+        st.subheader("Preview Data")
+        
+        col_mappings = {
+            'sku': ['sku', 'SKU', 'Sku', 'SKU Code', 'SKU ID'],
+            'item_name': ['item_name', 'Item Name', 'Item Name (English)', 'Name', 'English Name', 'Name (English)'],
+            'item_name_arabic': ['item_name_arabic', 'Item Name (Arabic)', 'Arabic Name', 'Name (Arabic)', 'Arabic'],
+            'initial_quantity': ['initial_quantity', 'Initial Quantity', 'Qty', 'Quantity', 'Stock', 'Quantity Change'],
+            'buying_price': ['buying_price', 'Buying Price', 'Buying', 'Buying (EGP)'],
+            'selling_price': ['selling_price', 'Selling Price', 'Selling', 'Selling (EGP)'],
+            'supplier': ['supplier', 'Supplier', 'Supplier Company']
+        }
+        
+        mapped_df = pd.DataFrame()
+        raw_cols = df.columns.tolist()
+        
+        for canonical, options in col_mappings.items():
+            found = False
+            for opt in options:
+                for c in raw_cols:
+                    if c.strip().lower() == opt.strip().lower():
+                        mapped_df[canonical] = df[c]
+                        found = True
+                        break
+                if found:
+                    break
+            if not found:
+                if canonical == 'initial_quantity':
+                    mapped_df[canonical] = 0
+                elif canonical in ['buying_price', 'selling_price']:
+                    mapped_df[canonical] = 0.0
+                else:
+                    mapped_df[canonical] = ""
+                    
+        missing = []
+        if 'sku' not in mapped_df.columns or mapped_df['sku'].astype(str).str.strip().eq("").all():
+            missing.append("SKU")
+        if 'item_name' not in mapped_df.columns or mapped_df['item_name'].astype(str).str.strip().eq("").all():
+            missing.append("Item Name")
+            
+        if missing:
+            st.error(f"Could not map required columns: {', '.join(missing)}. Please check headers.")
+        else:
+            mapped_df['sku'] = mapped_df['sku'].astype(str).str.strip()
+            mapped_df['item_name'] = mapped_df['item_name'].astype(str).str.strip()
+            mapped_df['item_name_arabic'] = mapped_df['item_name_arabic'].fillna("").astype(str).str.strip()
+            
+            def local_safe_int(v):
+                if pd.isna(v) or str(v).strip() == "": return 0
+                try: return int(float(v))
+                except: return 0
+                
+            def local_safe_float(v):
+                if pd.isna(v) or str(v).strip() == "": return 0.0
+                try: return float(v)
+                except: return 0.0
+                
+            mapped_df['initial_quantity'] = mapped_df['initial_quantity'].apply(local_safe_int)
+            mapped_df['buying_price'] = mapped_df['buying_price'].apply(local_safe_float)
+            mapped_df['selling_price'] = mapped_df['selling_price'].apply(local_safe_float)
+            mapped_df['supplier'] = mapped_df['supplier'].fillna("").astype(str).str.strip()
+            
+            st.dataframe(mapped_df, width='stretch', hide_index=True)
+            
+            if st.button("🚀 Confirm & Insert Products", type="primary", width='stretch'):
+                with get_session() as session:
+                    success_count = 0
+                    skipped_count = 0
+                    errors = []
+                    
+                    for _, row in mapped_df.iterrows():
+                        sku_val = row['sku']
+                        if not sku_val or sku_val == "nan":
+                            continue
+                        
+                        exist = session.query(Product).filter(Product.sku == sku_val).first()
+                        if exist:
+                            skipped_count += 1
+                            continue
+                            
+                        try:
+                            logic.add_product(
+                                session=session,
+                                sku=sku_val,
+                                item_name=row['item_name'],
+                                item_name_arabic=row['item_name_arabic'],
+                                initial_quantity=row['initial_quantity'],
+                                buying_price=row['buying_price'],
+                                selling_price=row['selling_price'],
+                                supplier=row['supplier']
+                            )
+                            success_count += 1
+                        except Exception as row_err:
+                            errors.append(f"SKU {sku_val}: {row_err}")
+                            
+                    if success_count > 0:
+                        session.commit()
+                        logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Batch Add Products", f"Added {success_count} products, skipped {skipped_count} duplicates")
+                        try:
+                            sync_to_google_sheet_if_configured()
+                        except Exception:
+                            pass
+                        st.success(f"Successfully added {success_count} products! (Skipped {skipped_count} existing duplicates)")
+                        if errors:
+                            st.warning("Some errors occurred:\n" + "\n".join(errors))
+                        time.sleep(1.5)
+                        st.rerun()
+                    else:
+                        st.warning(f"No products added. (Skipped {skipped_count} existing duplicates)")
+                        if errors:
+                            st.error("\n".join(errors))
+
+
 # ─── DIALOG: Restock Product ──────────────────────────────────────────────────
 @st.dialog("📥 Restock Existing Product", width="large")
 def dialog_restock():
@@ -1168,6 +1323,152 @@ def dialog_add_expense():
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to record expense: {e}")
+
+
+# ─── DIALOG: Batch Insert Expenses ────────────────────────────────────────────
+@st.dialog("📥 Batch Insert Expenses", width="large")
+def dialog_batch_insert_expenses():
+    import io
+    st.write("Record multiple expenses at once. Choose a paste method or upload a file.")
+    
+    with st.expander("ℹ️ Column Names & Guidelines"):
+        st.write("""
+        **Required Columns:**
+        - `Item`: Name/Details of the expense
+        - `Amount`: Numeric cost value (EGP)
+        
+        **Optional Columns:**
+        - `Day` / `Date` (defaults to today)
+        - `Wallet` / `Account` (expects 'شباسي' or 'حجازي', defaults to 'شباسي')
+        """)
+        
+    t1, t2 = st.tabs(["📋 Paste Data", "📤 Upload CSV/Excel"])
+    df = None
+    
+    with t1:
+        pasted_text = st.text_area("Paste tab-separated or comma-separated rows here (including header row):", height=200, placeholder="Day\tItem\tWallet\tAmount\n2026-06-18\tTest Expense\tشباسي\t150")
+        if pasted_text.strip():
+            try:
+                df = pd.read_csv(io.StringIO(pasted_text.strip()), sep=None, engine='python')
+            except Exception as e:
+                st.error(f"Failed to parse text: {e}")
+                
+    with t2:
+        uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=["csv", "xlsx"], key="exp_batch_uploader")
+        if uploaded_file is not None:
+            try:
+                if uploaded_file.name.endswith('.csv'):
+                    df = pd.read_csv(uploaded_file)
+                else:
+                    df = pd.read_excel(uploaded_file)
+            except Exception as e:
+                st.error(f"Failed to read file: {e}")
+                
+    if df is not None:
+        st.subheader("Preview Data")
+        
+        col_mappings = {
+            'day': ['day', 'Day', 'date', 'Date', 'Day / Date'],
+            'item': ['item', 'Item', 'expense_item', 'Expense Item', 'Details', 'Expense'],
+            'wallet': ['wallet', 'Wallet', 'wallet_account', 'Wallet / Account', 'Account'],
+            'amount': ['amount', 'Amount', 'cost', 'Cost', 'Amount (EGP)']
+        }
+        
+        mapped_df = pd.DataFrame()
+        raw_cols = df.columns.tolist()
+        
+        for canonical, options in col_mappings.items():
+            found = False
+            for opt in options:
+                for c in raw_cols:
+                    if c.strip().lower() == opt.strip().lower():
+                        mapped_df[canonical] = df[c]
+                        found = True
+                        break
+                if found:
+                    break
+            if not found:
+                if canonical == 'day':
+                    mapped_df[canonical] = datetime.today().strftime("%Y-%m-%d")
+                elif canonical == 'wallet':
+                    mapped_df[canonical] = "شباسي"
+                else:
+                    mapped_df[canonical] = ""
+                    
+        missing = []
+        if 'item' not in mapped_df.columns or mapped_df['item'].astype(str).str.strip().eq("").all():
+            missing.append("Item/Expense name")
+        if 'amount' not in mapped_df.columns or mapped_df['amount'].astype(str).str.strip().eq("").all():
+            missing.append("Amount")
+            
+        if missing:
+            st.error(f"Could not map required columns: {', '.join(missing)}. Please check headers.")
+        else:
+            mapped_df['item'] = mapped_df['item'].astype(str).str.strip()
+            
+            def local_safe_float(v):
+                if pd.isna(v) or str(v).strip() == "": return 0.0
+                try: return float(v)
+                except: return 0.0
+                
+            mapped_df['amount'] = mapped_df['amount'].apply(local_safe_float)
+            
+            def clean_wallet(w):
+                if pd.isna(w): return "شباسي"
+                s = str(w).strip()
+                if "حجازي" in s: return "حجازي"
+                return "شباسي"
+                
+            mapped_df['wallet'] = mapped_df['wallet'].apply(clean_wallet)
+            
+            def parse_date(d):
+                if pd.isna(d) or str(d).strip() == "":
+                    return datetime.today()
+                s = str(d).strip()
+                if hasattr(d, 'to_pydatetime'):
+                    return d.to_pydatetime()
+                try:
+                    return datetime.strptime(s.split()[0], "%Y-%m-%d")
+                except:
+                    try:
+                        return datetime.strptime(s.split()[0], "%d/%m/%Y")
+                    except:
+                        return datetime.today()
+                        
+            mapped_df['day'] = mapped_df['day'].apply(parse_date)
+            
+            display_df = mapped_df.copy()
+            display_df['day'] = display_df['day'].dt.strftime("%Y-%m-%d")
+            st.dataframe(display_df, width='stretch', hide_index=True)
+            
+            if st.button("🚀 Confirm & Insert Expenses", type="primary", width='stretch'):
+                with get_session() as session:
+                    success_count = 0
+                    for _, row in mapped_df.iterrows():
+                        if not row['item'] or row['amount'] <= 0:
+                            continue
+                            
+                        expense = Expense(
+                            day=datetime.combine(row['day'].date(), datetime.min.time()),
+                            item=row['item'],
+                            wallet=row['wallet'],
+                            amount=row['amount']
+                        )
+                        session.add(expense)
+                        success_count += 1
+                        
+                    if success_count > 0:
+                        session.commit()
+                        logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Batch Add Expenses", f"Added {success_count} expenses")
+                        try:
+                            sync_to_google_sheet_if_configured()
+                        except Exception:
+                            pass
+                        st.success(f"Successfully added {success_count} expenses!")
+                        time.sleep(1.5)
+                        st.rerun()
+                    else:
+                        st.error("No expenses added. Please verify row contents.")
 
 
 # ─── DIALOG: Process New Order ───────────────────────────────────────────────
@@ -1311,13 +1612,16 @@ with tab_products:
     </div>""", unsafe_allow_html=True)
 
     # ── Action buttons ────────────────────────────────────────────────────────
-    btn_col1, btn_col2, _ = st.columns([1, 1, 4])
+    btn_col1, btn_col2, btn_col3, _ = st.columns([1.2, 1.2, 1.2, 3.4])
     with btn_col1:
         if st.button("➕ Add New Product", type="primary", width='stretch'):
             dialog_add_product()
     with btn_col2:
         if st.button("📥 Restock Product", width='stretch'):
             dialog_restock()
+    with btn_col3:
+        if st.button("📥 Batch Insert", width='stretch'):
+            dialog_batch_insert_products()
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1615,8 +1919,13 @@ with tab_expenses:
         
         with col_actions:
             st.subheader("➕ Record New Expense")
-            if st.button("➕ Add New Expense", type="primary", width='stretch'):
-                dialog_add_expense()
+            ex_col1, ex_col2 = st.columns(2)
+            with ex_col1:
+                if st.button("➕ Add New Expense", type="primary", width='stretch'):
+                    dialog_add_expense()
+            with ex_col2:
+                if st.button("📥 Batch Insert", width='stretch'):
+                    dialog_batch_insert_expenses()
                 
         with col_settle:
             st.subheader("🔒 Settle Debt / Log Debt Collected")
