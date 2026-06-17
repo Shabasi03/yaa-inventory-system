@@ -936,3 +936,176 @@ def check_google_sheet_updates(session: Session, url: str) -> bool:
         return False
 
 
+def analyze_and_route_batch_text(text: str) -> dict:
+    """
+    Analyzes a raw block of copy-pasted text and parses it into Products and Expenses.
+    Supports explicitly marked sections ([Products], [Expenses], Products:, Expenses:)
+    as well as row heuristics (SKUs vs Wallet names/Dates).
+    """
+    import re
+    import pandas as pd
+    from datetime import datetime
+    
+    products = []
+    expenses = []
+    log = []
+    
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    current_section = None # Can be 'products', 'expenses'
+    
+    def safe_int(v):
+        try: return int(float(v))
+        except: return 0
+        
+    def safe_float(v):
+        try: return float(v)
+        except: return 0.0
+
+    def parse_date(d_str):
+        d_str = d_str.strip()
+        try:
+            return datetime.strptime(d_str, "%Y-%m-%d")
+        except:
+            try:
+                return datetime.strptime(d_str, "%d/%m/%Y")
+            except:
+                return datetime.today()
+
+    for idx, line in enumerate(lines):
+        lower_line = line.lower()
+        if any(marker in lower_line for marker in ['[products]', 'products:', '---products---']):
+            current_section = 'products'
+            log.append(f"Line {idx+1}: Switched to Products section.")
+            continue
+        elif any(marker in lower_line for marker in ['[expenses]', 'expenses:', '---expenses---']):
+            current_section = 'expenses'
+            log.append(f"Line {idx+1}: Switched to Expenses section.")
+            continue
+            
+        parts = [p.strip() for p in re.split(r'\t|,|\|', line) if p.strip()]
+        if not parts:
+            continue
+            
+        line_routed = False
+        
+        if current_section == 'products':
+            if len(parts) >= 2:
+                products.append({
+                    'sku': parts[0],
+                    'item_name': parts[1],
+                    'initial_quantity': safe_int(parts[2]) if len(parts) > 2 else 0,
+                    'buying_price': safe_float(parts[3]) if len(parts) > 3 else 0.0,
+                    'selling_price': safe_float(parts[4]) if len(parts) > 4 else 0.0,
+                    'supplier': parts[5] if len(parts) > 5 else ""
+                })
+                line_routed = True
+        elif current_section == 'expenses':
+            if len(parts) >= 2:
+                wallet_val = "شباسي"
+                amount_val = 0.0
+                day_val = datetime.today()
+                item_val = ""
+                
+                if len(parts) >= 4:
+                    day_val = parse_date(parts[0])
+                    item_val = parts[1]
+                    wallet_val = "حجازي" if "حجازي" in parts[2] else "شباسي"
+                    amount_val = safe_float(parts[3])
+                elif len(parts) == 3:
+                    item_val = parts[0]
+                    wallet_val = "حجازي" if "حجازي" in parts[1] else "شباسي"
+                    amount_val = safe_float(parts[2])
+                elif len(parts) == 2:
+                    item_val = parts[0]
+                    amount_val = safe_float(parts[1])
+                
+                expenses.append({
+                    'day': day_val,
+                    'item': item_val,
+                    'wallet': wallet_val,
+                    'amount': amount_val
+                })
+                line_routed = True
+                
+        if line_routed:
+            continue
+            
+        # No section active, check heuristics
+        sku_match = re.search(r'\b[yY]\d+\b', line)
+        if sku_match:
+            sku_val = sku_match.group(0).upper()
+            remaining_parts = [p for p in parts if p.upper() != sku_val]
+            if remaining_parts:
+                item_name = remaining_parts[0]
+                qty_val = safe_int(remaining_parts[1]) if len(remaining_parts) > 1 else 0
+                buy_val = safe_float(remaining_parts[2]) if len(remaining_parts) > 2 else 0.0
+                sell_val = safe_float(remaining_parts[3]) if len(remaining_parts) > 3 else 0.0
+                supplier_val = remaining_parts[4] if len(remaining_parts) > 4 else ""
+                
+                products.append({
+                    'sku': sku_val,
+                    'item_name': item_name,
+                    'initial_quantity': qty_val,
+                    'buying_price': buy_val,
+                    'selling_price': sell_val,
+                    'supplier': supplier_val
+                })
+                log.append(f"Line {idx+1}: Heuristically classified as Product (SKU {sku_val}).")
+                line_routed = True
+                
+        if line_routed:
+            continue
+            
+        is_shabasi = "شباسي" in line
+        is_hejazi = "حجازي" in line
+        if is_shabasi or is_hejazi:
+            wallet_val = "حجازي" if is_hejazi else "شباسي"
+            numbers = re.findall(r'-?\d+(?:\.\d+)?', line)
+            date_match = re.search(r'\b\d{4}-\d{2}-\d{2}\b|\b\d{2}/\d{2}/\d{4}\b', line)
+            day_val = datetime.today()
+            if date_match:
+                day_val = parse_date(date_match.group(0))
+                
+            amount_val = 0.0
+            valid_numbers = []
+            for num in numbers:
+                if date_match and num in date_match.group(0):
+                    continue
+                valid_numbers.append(num)
+                
+            if valid_numbers:
+                amount_val = safe_float(valid_numbers[-1])
+                
+            words = [w for w in re.split(r'\s+', line) if w]
+            item_words = []
+            for w in words:
+                if w in ["شباسي", "حجازي"] or w == wallet_val:
+                    continue
+                if date_match and w in date_match.group(0):
+                    continue
+                if re.match(r'^-?\d+(?:\.\d+)?$', w):
+                    continue
+                item_words.append(w)
+                
+            item_val = " ".join(item_words) if item_words else "Unspecified Expense"
+            
+            expenses.append({
+                'day': day_val,
+                'item': item_val,
+                'wallet': wallet_val,
+                'amount': amount_val
+            })
+            log.append(f"Line {idx+1}: Heuristically classified as Expense ({wallet_val}, EGP {amount_val}).")
+            line_routed = True
+            
+        if not line_routed:
+            log.append(f"Line {idx+1}: Warning - Could not classify line. Skipped.")
+            
+    return {
+        'products': products,
+        'expenses': expenses,
+        'log': log
+    }
+
+
+

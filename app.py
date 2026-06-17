@@ -930,6 +930,7 @@ tabs_list = [
     "👥  Customers Directory",
     "🛒  Orders & Fulfillment",
     "💸  Expenses Tracker",
+    "📥  Smart Import",
 ]
 is_admin_user = (st.session_state.get("user_role") == "Admin")
 if is_admin_user:
@@ -939,9 +940,9 @@ tabs_list.append("⚙️ Settings")
 tabs = st.tabs(tabs_list)
 
 if is_admin_user:
-    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses, tab_logs, tab_settings = tabs
+    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses, tab_smart_import, tab_logs, tab_settings = tabs
 else:
-    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses, tab_settings = tabs
+    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses, tab_smart_import, tab_settings = tabs
 
 
 
@@ -2041,6 +2042,112 @@ if is_admin_user:
                 st.dataframe(style_zebra(pd.DataFrame(log_data)), width='stretch', hide_index=True)
             else:
                 st.info("No system actions logged yet.")
+
+
+with tab_smart_import:
+    st.markdown("""
+    <div class="section-header">
+        <h2>📥 Intelligent Smart Batch Import</h2>
+        <p>Paste mixed lines or structured blocks of text (from Excel/Google Sheets, lists, messages) and the system will automatically analyze, classify, and insert them into the corresponding tables.</p>
+    </div>""", unsafe_allow_html=True)
+    
+    st.info("💡 You can paste a mixture of products and expenses, or explicit sections marked with headers like `[Products]` and `[Expenses]`. The analyzer will classify lines based on formats (SKU patterns vs wallet/currency names).")
+    
+    pasted_input = st.text_area("Paste mixed raw data text here:", height=300, key="smart_pasted_text",
+                                placeholder="[Products]\nSKU\tItem Name\tStock\tBuying\tSelling\nY26701\tSample Item\t5\t150\t220\n\n[Expenses]\nDay\tItem\tWallet\tAmount\n2026-06-18\tLunch with client\tشباسي\t120\n\n# Or freeform line heuristics:\nY26702 Freeform Product 15 200 350 Apple\nTaxi Uber شباسي 85")
+                                
+    if pasted_input.strip():
+        analysis = logic.analyze_and_route_batch_text(pasted_input)
+        
+        parsed_prods = analysis['products']
+        parsed_exps = analysis['expenses']
+        parse_logs = analysis['log']
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader(f"📦 Classified as Products ({len(parsed_prods)})")
+            if parsed_prods:
+                df_p = pd.DataFrame(parsed_prods)
+                st.dataframe(df_p, width='stretch', hide_index=True)
+            else:
+                st.info("No lines classified as products.")
+                
+        with c2:
+            st.subheader(f"💸 Classified as Expenses ({len(parsed_exps)})")
+            if parsed_exps:
+                exp_display = []
+                for e in parsed_exps:
+                    exp_display.append({
+                        'day': e['day'].strftime("%Y-%m-%d"),
+                        'item': e['item'],
+                        'wallet': e['wallet'],
+                        'amount': e['amount']
+                    })
+                df_e = pd.DataFrame(exp_display)
+                st.dataframe(df_e, width='stretch', hide_index=True)
+            else:
+                st.info("No lines classified as expenses.")
+                
+        with st.expander("🕵️ Parser Routing Audit Log"):
+            for l in parse_logs:
+                if "Warning" in l:
+                    st.warning(l)
+                else:
+                    st.text(l)
+                    
+        is_admin = (st.session_state.get("user_role") == "Admin")
+        if not is_admin and (parsed_prods or parsed_exps):
+            st.warning("⚠️ View-only: Logging in as Admin is required to insert batch records.")
+        elif parsed_prods or parsed_exps:
+            if st.button("🚀 Confirm & Import Analyzed Records", type="primary", width='stretch', key="btn_confirm_smart_import"):
+                with get_session() as session:
+                    prod_added = 0
+                    prod_skipped = 0
+                    exp_added = 0
+                    
+                    for p in parsed_prods:
+                        exist = session.query(Product).filter(Product.sku == p['sku']).first()
+                        if exist:
+                            prod_skipped += 1
+                            continue
+                        try:
+                            logic.add_product(
+                                session=session,
+                                sku=p['sku'],
+                                item_name=p['item_name'],
+                                item_name_arabic=p['item_name_arabic'],
+                                initial_quantity=p['initial_quantity'],
+                                buying_price=p['buying_price'],
+                                selling_price=p['selling_price'],
+                                supplier=p['supplier']
+                            )
+                            prod_added += 1
+                        except:
+                            pass
+                            
+                    for e in parsed_exps:
+                        expense = Expense(
+                            day=datetime.combine(e['day'].date(), datetime.min.time()),
+                            item=e['item'],
+                            wallet=e['wallet'],
+                            amount=e['amount']
+                        )
+                        session.add(expense)
+                        exp_added += 1
+                        
+                    if prod_added > 0 or exp_added > 0:
+                        session.commit()
+                        logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Smart Batch Import", f"Added {prod_added} products (skipped {prod_skipped} duplicates), added {exp_added} expenses")
+                        try:
+                            sync_to_google_sheet_if_configured()
+                        except Exception:
+                            pass
+                        st.success(f"Successfully imported {prod_added} products and {exp_added} expenses! (Skipped {prod_skipped} duplicate products)")
+                        time.sleep(1.5)
+                        st.rerun()
+                    else:
+                        st.warning("No records were imported. (All products might be duplicates or data empty)")
+
 
 with tab_settings:
     st.markdown("""
