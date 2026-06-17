@@ -28,13 +28,73 @@ def _format_ledger_reason(reason: str) -> str:
 
 # ─── PAGE CONFIG ─────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="DEXEF Core - Inventory Control",
+    page_title="Yaa-يَــــــــاء Core - Inventory Control",
     page_icon="📦",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
 init_db()
+
+# ─── USER AUTHENTICATION GATE ────────────────────────────────────────────────
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+
+if not st.session_state["logged_in"]:
+    # Center login UI
+    st.markdown("""
+    <style>
+    .block-container { max-width: 480px !important; padding-top: 80px !important; }
+    #MainMenu, header, footer { visibility: hidden; }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    with st.container():
+        if os.path.exists("yaa_logo.jpg"):
+            st.image("yaa_logo.jpg", width=110)
+        st.markdown("""
+        <h2 style="color: #0f172a; margin-top: 15px; margin-bottom: 5px; font-weight: 700;">Yaa-يَــــــــاء <span style="color: #2563eb;">Core</span></h2>
+        <p style="color: #64748b; font-size: 0.88rem; margin-top: 0; margin-bottom: 25px;">Yaa Inventory &amp; Orders Management System</p>
+        """, unsafe_allow_html=True)
+        
+        with st.form("login_form", clear_on_submit=False):
+            username = st.text_input("Username", value="Admin")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("🔓 Authenticate & Enter", type="primary", use_container_width=True)
+            if submitted:
+                if (username == "Admin" and password in ["Yaa2813", "Yaa3728"]) or (username == "User" and password == "User2026"):
+                    st.session_state["logged_in"] = True
+                    st.session_state["user_role"] = username
+                    import time
+                    st.session_state["last_activity_time"] = time.time()
+                    st.success("Login Successful!")
+                    time.sleep(0.6)
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials. Access Denied.")
+    st.stop()
+
+# ─── SESSION IDLE TIMEOUT CHECK ──────────────────────────────────────────────
+import time
+current_time = time.time()
+if st.session_state.get("logged_in") and st.session_state.get("user_role") == "Admin":
+    if "last_activity_time" in st.session_state:
+        elapsed = current_time - st.session_state["last_activity_time"]
+        if elapsed > 120:  # 2 minutes idle
+            st.session_state["user_role"] = "User"
+            st.session_state["session_downgraded"] = True
+    st.session_state["last_activity_time"] = current_time
+
+# ─── AUTO SYNC REFRESH FOR OTHER USERS ───────────────────────────────────────
+db_file = "inventory.db"
+if os.path.exists(db_file):
+    db_mtime = os.path.getmtime(db_file)
+    if "last_db_mtime" not in st.session_state:
+        st.session_state["last_db_mtime"] = db_mtime
+    elif db_mtime != st.session_state["last_db_mtime"]:
+        st.session_state["last_db_mtime"] = db_mtime
+        st.cache_data.clear()
+        st.rerun()
 
 # ─── SEED DATA ────────────────────────────────────────────────────────────────
 with get_session() as session:
@@ -49,6 +109,12 @@ with get_session() as session:
         except Exception:
             pass
 
+# ─── GLOBAL BACKGROUND LOGIC ──────────────────────────────────────────────────
+bg_logo_base64 = ""
+if os.path.exists("yaa_logo.jpg"):
+    with open("yaa_logo.jpg", "rb") as f:
+        bg_logo_base64 = base64.b64encode(f.read()).decode()
+
 # ─── GLOBAL CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -56,9 +122,30 @@ st.markdown("""
 
 html, body, [class*="css"], .stMarkdown { font-family: 'Outfit', sans-serif; }
 
-/* ── Hide default Streamlit top decoration ── */
+/* ── Always show the default Streamlit header (containing the Deploy button) transparently ── */
+header[data-testid="stHeader"], header {
+    background-color: transparent !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 48px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 1000 !important;
+}
+
 #MainMenu, footer { visibility: hidden; }
-.block-container { padding-top: 0 !important; }
+.block-container { padding-top: 60px !important; }
+
+/* ── Background Logo with 90% Overlay and Cover Fit ── */
+[data-testid="stAppViewContainer"] {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url("data:image/jpeg;base64,__BG_LOGO_BASE64__");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-attachment: fixed;
+}
 
 /* ── Top nav bar ── */
 .top-navbar {
@@ -159,9 +246,9 @@ html, body, [class*="css"], .stMarkdown { font-family: 'Outfit', sans-serif; }
     box-shadow: 0 25px 60px rgba(0,0,0,0.35) !important;
 }
 </style>
-""", unsafe_allow_html=True)
+""".replace("__BG_LOGO_BASE64__", bg_logo_base64), unsafe_allow_html=True)
 
-# ─── TOP HEADER (Yaa Logo + DEXEF Brand Title) ────────────────────────────────
+# ─── TOP HEADER (Yaa Logo + Yaa-يَــــــــاء Brand Title) ────────────────────────────────
 col_logo, col_nav = st.columns([1, 14])
 with col_logo:
     if os.path.exists("yaa_logo.jpg"):
@@ -170,13 +257,19 @@ with col_nav:
     st.markdown("""
     <div style="padding-top: 4px;">
       <h1 style="font-size: 1.85rem; font-weight: 700; color: #1e293b; margin: 0; line-height: 1.2;">
-        DEXEF <span style="color: #2563eb;">Core</span>
+        Yaa-يَــــــــاء <span style="color: #2563eb;">Core</span>
       </h1>
       <p style="color: #64748b; font-size: 0.85rem; margin: 0; padding-top: 2px;">Inventory &amp; Orders Management</p>
     </div>
     """, unsafe_allow_html=True)
 
 st.markdown("<hr style='margin: 8px 0 16px 0; border: 0; border-top: 1px solid #e2e8f0;' />", unsafe_allow_html=True)
+
+if st.session_state.get("session_downgraded"):
+    st.warning("⚠️ Session was idle for more than 2 minutes. Admin privileges downgraded to normal User (Add Only).")
+    if st.button("Dismiss & Acknowledge"):
+        st.session_state["session_downgraded"] = False
+        st.rerun()
 
 
 # ─── GOOGLE SHEET AUTO-SYNC LOGIC ────────────────────────────────────────────
@@ -223,6 +316,258 @@ with col_btn:
                 time.sleep(1)
                 st.rerun()
 
+# Initialize edit flags and key version counters in session state
+if "edit_sku" not in st.session_state:
+    st.session_state["edit_sku"] = None
+if "edit_cust_id" not in st.session_state:
+    st.session_state["edit_cust_id"] = None
+if "edit_order_id" not in st.session_state:
+    st.session_state["edit_order_id"] = None
+if "edit_expense_id" not in st.session_state:
+    st.session_state["edit_expense_id"] = None
+
+if "prod_df_ver" not in st.session_state:
+    st.session_state["prod_df_ver"] = 0
+if "cust_df_ver" not in st.session_state:
+    st.session_state["cust_df_ver"] = 0
+if "order_df_ver" not in st.session_state:
+    st.session_state["order_df_ver"] = 0
+if "exp_df_ver" not in st.session_state:
+    st.session_state["exp_df_ver"] = 0
+
+# ─── DIALOG: Edit Product ─────────────────────────────────────────────────────
+@st.dialog("✏️ Edit Product", width="large")
+def dialog_edit_product(sku):
+    is_admin = (st.session_state.get("user_role") == "Admin")
+    with get_session() as session:
+        product = session.query(Product).filter(Product.sku == sku).first()
+        if not product:
+            st.error("Product not found.")
+            if st.button("Close"):
+                st.session_state["edit_sku"] = None
+                st.rerun()
+            return
+        with st.form("edit_prod_form"):
+            item_name = st.text_input("Item Name (English) *", value=product.item_name, disabled=not is_admin)
+            item_name_arabic = st.text_input("Item Name (Arabic)", value=product.item_name_arabic or "", disabled=not is_admin)
+            initial_quantity = st.number_input("Stock Quantity", min_value=0, value=product.initial_quantity, step=1, disabled=not is_admin)
+            buying_price = st.number_input("Buying Price (EGP)", min_value=0.0, value=product.buying_price, step=10.0, disabled=not is_admin)
+            selling_price = st.number_input("Selling Price (EGP)", min_value=0.0, value=product.selling_price, step=10.0, disabled=not is_admin)
+            supplier = st.text_input("Supplier", value=product.supplier or "", disabled=not is_admin)
+            
+            c1, c2, c3 = st.columns(3)
+            if is_admin:
+                with c1:
+                    submitted = st.form_submit_button("💾 Save Changes", type="primary")
+                with c2:
+                    deleted = st.form_submit_button("🗑️ Delete Product")
+                with c3:
+                    cancelled = st.form_submit_button("Cancel")
+            else:
+                st.warning("⚠️ View-only: Logging in as Admin is required to modify or delete.")
+                submitted = False
+                deleted = False
+                with c1:
+                    cancelled = st.form_submit_button("Close / Dismiss")
+                
+            if submitted:
+                product.item_name = item_name
+                product.item_name_arabic = item_name_arabic
+                product.initial_quantity = initial_quantity
+                product.buying_price = buying_price
+                product.selling_price = selling_price
+                product.supplier = supplier
+                session.commit()
+                st.session_state["edit_sku"] = None
+                st.success("Product updated!")
+                st.rerun()
+            elif deleted:
+                # Clear dependencies
+                session.query(StockLedger).filter(StockLedger.sku == sku).delete()
+                session.query(Order).filter(Order.sku == sku).delete()
+                session.delete(product)
+                session.commit()
+                st.session_state["edit_sku"] = None
+                st.success("Product deleted!")
+                st.rerun()
+            elif cancelled:
+                st.session_state["edit_sku"] = None
+                st.rerun()
+
+# ─── DIALOG: Edit Customer ────────────────────────────────────────────────────
+@st.dialog("✏️ Edit Customer", width="large")
+def dialog_edit_customer(cust_id):
+    is_admin = (st.session_state.get("user_role") == "Admin")
+    with get_session() as session:
+        customer = session.query(Customer).filter(Customer.customer_id == cust_id).first()
+        if not customer:
+            st.error("Customer not found.")
+            if st.button("Close"):
+                st.session_state["edit_cust_id"] = None
+                st.rerun()
+            return
+        with st.form("edit_cust_form"):
+            customer_name = st.text_input("Customer Full Name *", value=customer.customer_name, disabled=not is_admin)
+            phone = st.text_input("Phone Number * (Unique)", value=customer.customer_phone_number, disabled=not is_admin)
+            address = st.text_input("Billing Address", value=customer.customer_address or "", disabled=not is_admin)
+            
+            c1, c2, c3 = st.columns(3)
+            if is_admin:
+                with c1:
+                    submitted = st.form_submit_button("💾 Save Changes", type="primary")
+                with c2:
+                    deleted = st.form_submit_button("🗑️ Delete Customer")
+                with c3:
+                    cancelled = st.form_submit_button("Cancel")
+            else:
+                st.warning("⚠️ View-only: Logging in as Admin is required to modify or delete.")
+                submitted = False
+                deleted = False
+                with c1:
+                    cancelled = st.form_submit_button("Close / Dismiss")
+                
+            if submitted:
+                customer.customer_name = customer_name
+                customer.customer_phone_number = phone
+                customer.customer_address = address
+                session.commit()
+                st.session_state["edit_cust_id"] = None
+                st.success("Customer updated!")
+                st.rerun()
+            elif deleted:
+                # Clear dependencies
+                session.query(Order).filter(Order.customer_id == cust_id).delete()
+                session.delete(customer)
+                session.commit()
+                st.session_state["edit_cust_id"] = None
+                st.success("Customer deleted!")
+                st.rerun()
+            elif cancelled:
+                st.session_state["edit_cust_id"] = None
+                st.rerun()
+
+# ─── DIALOG: Edit Order ───────────────────────────────────────────────────────
+@st.dialog("✏️ Edit Order", width="large")
+def dialog_edit_order(order_id):
+    is_admin = (st.session_state.get("user_role") == "Admin")
+    with get_session() as session:
+        orders = session.query(Order).filter(Order.order_id == order_id).all()
+        if not orders:
+            st.error("Order not found.")
+            if st.button("Close"):
+                st.session_state["edit_order_id"] = None
+                st.rerun()
+            return
+        first_order = orders[0]
+        with st.form("edit_ord_form"):
+            order_status = st.selectbox("Fulfillment Status", ["Pending","Confirmed","Dispatched","Delivered"],
+                                        index=["Pending","Confirmed","Dispatched","Delivered"].index(first_order.order_status),
+                                        disabled=not is_admin)
+            payment_status = st.selectbox("Payment Status", ["Pending","Paid","Failed"],
+                                         index=["Pending","Paid","Failed"].index(first_order.payment_status),
+                                         disabled=not is_admin)
+            
+            c1, c2, c3 = st.columns(3)
+            if is_admin:
+                with c1:
+                    submitted = st.form_submit_button("💾 Save Changes", type="primary")
+                with c2:
+                    deleted = st.form_submit_button("🗑️ Delete Order")
+                with c3:
+                    cancelled = st.form_submit_button("Cancel")
+            else:
+                st.warning("⚠️ View-only: Logging in as Admin is required to modify or delete.")
+                submitted = False
+                deleted = False
+                with c1:
+                    cancelled = st.form_submit_button("Close / Dismiss")
+                
+            if submitted:
+                logic.update_order_status(session, order_id, order_status)
+                logic.update_payment_status(session, order_id, payment_status)
+                session.commit()
+                st.session_state["edit_order_id"] = None
+                st.success("Order updated!")
+                st.rerun()
+            elif deleted:
+                for o in orders:
+                    if o.order_status == 'Delivered':
+                        logic._revert_stock_deduction_for_order(session, o)
+                    session.delete(o)
+                session.commit()
+                st.session_state["edit_order_id"] = None
+                st.success("Order deleted!")
+                st.rerun()
+            elif cancelled:
+                st.session_state["edit_order_id"] = None
+                st.rerun()
+
+# ─── DIALOG: Edit Expense ─────────────────────────────────────────────────────
+@st.dialog("✏️ Edit Expense", width="large")
+def dialog_edit_expense(expense_id):
+    is_admin = (st.session_state.get("user_role") == "Admin")
+    with get_session() as session:
+        expense = session.query(Expense).filter(Expense.expense_id == expense_id).first()
+        if not expense:
+            st.error("Expense not found.")
+            if st.button("Close"):
+                st.session_state["edit_expense_id"] = None
+                st.rerun()
+            return
+        with st.form("edit_exp_form"):
+            item = st.text_input("Expense Item *", value=expense.item, disabled=not is_admin)
+            amount = st.number_input("Amount (EGP) *", min_value=0.0, value=expense.amount, step=10.0, disabled=not is_admin)
+            wallet_options = ["شباسي", "حجازي"]
+            default_index = 0
+            if expense.wallet in wallet_options:
+                default_index = wallet_options.index(expense.wallet)
+            wallet = st.selectbox("Wallet / Account", options=wallet_options, index=default_index, disabled=not is_admin)
+            day = st.date_input("Date", value=expense.day or datetime.today(), disabled=not is_admin)
+            
+            c1, c2, c3 = st.columns(3)
+            if is_admin:
+                with c1:
+                    submitted = st.form_submit_button("💾 Save Changes", type="primary")
+                with c2:
+                    deleted = st.form_submit_button("🗑️ Delete Expense")
+                with c3:
+                    cancelled = st.form_submit_button("Cancel")
+            else:
+                st.warning("⚠️ View-only: Logging in as Admin is required to modify or delete.")
+                submitted = False
+                deleted = False
+                with c1:
+                    cancelled = st.form_submit_button("Close / Dismiss")
+                
+            if submitted:
+                expense.item = item
+                expense.amount = amount
+                expense.wallet = wallet
+                expense.day = datetime.combine(day, datetime.min.time())
+                session.commit()
+                st.session_state["edit_expense_id"] = None
+                st.success("Expense updated!")
+                st.rerun()
+            elif deleted:
+                session.delete(expense)
+                session.commit()
+                st.session_state["edit_expense_id"] = None
+                st.success("Expense deleted!")
+                st.rerun()
+            elif cancelled:
+                st.session_state["edit_expense_id"] = None
+                st.rerun()
+
+# Trigger edit modals if active
+if st.session_state["edit_sku"]:
+    dialog_edit_product(st.session_state["edit_sku"])
+if st.session_state["edit_cust_id"]:
+    dialog_edit_customer(st.session_state["edit_cust_id"])
+if st.session_state["edit_order_id"]:
+    dialog_edit_order(st.session_state["edit_order_id"])
+if st.session_state["edit_expense_id"]:
+    dialog_edit_expense(st.session_state["edit_expense_id"])
+
 tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses = st.tabs([
     "📊  Dashboard",
     "📦  Products Catalog",
@@ -238,26 +583,28 @@ with st.sidebar:
     uploaded_file = st.file_uploader("Upload Yaa.xlsx workbook", type=["xlsx"])
     if uploaded_file is not None:
         clear_db_checked = st.checkbox("Clear existing database before importing", value=True)
-        if st.button("Import Excel Data", type="primary"):
-            temp_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploaded_data.xlsx")
-            with open(temp_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            with get_session() as session:
-                try:
-                    logic.import_excel_data(session, temp_path, clear_db=clear_db_checked)
-                    session.commit()
-                    st.success("Excel data imported successfully!")
-                    st.cache_data.clear()
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Failed to import Excel: {e}")
+        is_admin = (st.session_state.get("user_role") == "Admin")
+        if not is_admin:
+            st.warning("⚠️ Only Admins can import Excel data.")
+        else:
+            if st.button("Import Excel Data", type="primary"):
+                temp_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploaded_data.xlsx")
+                with open(temp_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                with get_session() as session:
+                    try:
+                        logic.import_excel_data(session, temp_path, clear_db=clear_db_checked)
+                        session.commit()
+                        st.success("Excel data imported successfully!")
+                        st.cache_data.clear()
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Failed to import Excel: {e}")
     st.markdown("---")
     st.info("Connected to local SQLite database: `inventory.db`")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # ─── DIALOG: Add New Product ──────────────────────────────────────────────────
-# ══════════════════════════════════════════════════════════════════════════════
 @st.dialog("📦 Add New Product", width="large")
 def dialog_add_product():
     with st.form("dlg_new_product_form", clear_on_submit=True):
@@ -288,9 +635,7 @@ def dialog_add_product():
                         st.error(f"Error: {e}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # ─── DIALOG: Restock Product ──────────────────────────────────────────────────
-# ══════════════════════════════════════════════════════════════════════════════
 @st.dialog("📥 Restock Existing Product", width="large")
 def dialog_restock():
     with get_session() as session:
@@ -318,9 +663,7 @@ def dialog_restock():
                     st.error(f"Restock failed: {e}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # ─── DIALOG: Register Customer ───────────────────────────────────────────────
-# ══════════════════════════════════════════════════════════════════════════════
 @st.dialog("👥 Register New Customer", width="large")
 def dialog_add_customer():
     with st.form("dlg_new_customer_form", clear_on_submit=True):
@@ -342,17 +685,14 @@ def dialog_add_customer():
                         st.error(f"Failed: {e}")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
 # ─── DIALOG: Add New Expense ──────────────────────────────────────────────────
-# ══════════════════════════════════════════════════════════════════════════════
 @st.dialog("💸 Add New Expense", width="large")
 def dialog_add_expense():
     with st.form("dlg_new_expense_form", clear_on_submit=True):
         item_val = st.text_input("Expense Item *", placeholder="أكل / أوبر / إيجار")
         amount_val = st.number_input("Amount (EGP) *", min_value=0.0, value=100.0, step=10.0)
-        wallet_val = st.text_input("Wallet / Account", placeholder="شباسي / حجازي")
+        wallet_val = st.selectbox("Wallet / Account", options=["شباسي", "حجازي"])
         day_val = st.date_input("Date", value=datetime.today())
-        
         submitted = st.form_submit_button("✅ Record Expense", type="primary", use_container_width=True)
         if submitted:
             if not item_val:
@@ -374,10 +714,7 @@ def dialog_add_expense():
                         st.error(f"Failed to record expense: {e}")
 
 
-
-# ══════════════════════════════════════════════════════════════════════════════
 # ─── DIALOG: Process New Order ───────────────────────────────────────────────
-# ══════════════════════════════════════════════════════════════════════════════
 @st.dialog("🛒 Process New Order", width="large")
 def dialog_new_order(cust_options, prod_options):
     if not cust_options or not prod_options:
@@ -532,7 +869,14 @@ with tab_products:
                 "Qty": p.initial_quantity, "Buying (EGP)": f"EGP {p.buying_price:.2f}",
                 "Selling (EGP)": f"EGP {p.selling_price:.2f}", "Supplier": p.supplier
             } for p in products]
-            st.dataframe(pd.DataFrame(prod_data), use_container_width=True, hide_index=True)
+            df_prod = pd.DataFrame(prod_data)
+            evt = st.dataframe(df_prod, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"prod_df_{st.session_state.prod_df_ver}")
+            if evt and evt.selection and evt.selection.rows:
+                selected_row = evt.selection.rows[0]
+                sku = df_prod.iloc[selected_row]["SKU"]
+                st.session_state["edit_sku"] = sku
+                st.session_state["prod_df_ver"] += 1
+                st.rerun()
         else:
             st.info("No products registered yet. Click **Add New Product** to get started.")
 
@@ -561,7 +905,14 @@ with tab_customers:
                 "ID": c.customer_id, "Name": c.customer_name,
                 "Phone": c.customer_phone_number, "Address": c.customer_address
             } for c in customers]
-            st.dataframe(pd.DataFrame(cust_data), use_container_width=True, hide_index=True)
+            df_cust = pd.DataFrame(cust_data)
+            evt = st.dataframe(df_cust, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"cust_df_{st.session_state.cust_df_ver}")
+            if evt and evt.selection and evt.selection.rows:
+                selected_row = evt.selection.rows[0]
+                cust_id = int(df_cust.iloc[selected_row]["ID"])
+                st.session_state["edit_cust_id"] = cust_id
+                st.session_state["cust_df_ver"] += 1
+                st.rerun()
         else:
             st.info("No customers registered yet.")
 
@@ -637,7 +988,14 @@ with tab_orders:
                         "Payment": first.payment_status,
                         "Date": first.order_date.strftime("%Y-%m-%d %H:%M"),
                     })
-                st.dataframe(pd.DataFrame(orders_data), use_container_width=True, hide_index=True)
+                df_orders = pd.DataFrame(orders_data)
+                evt = st.dataframe(df_orders, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"order_df_{st.session_state.order_df_ver}")
+                if evt and evt.selection and evt.selection.rows:
+                    selected_row = evt.selection.rows[0]
+                    order_id = int(df_orders.iloc[selected_row]["Order ID"])
+                    st.session_state["edit_order_id"] = order_id
+                    st.session_state["order_df_ver"] += 1
+                    st.rerun()
             else:
                 st.info("No orders placed yet.")
 
@@ -663,21 +1021,28 @@ with tab_orders:
             curr_ord = order_statuses.get(sel_id, "Pending")
             curr_pay = order_payments.get(sel_id, "Pending")
             st.info(f"**Fulfillment:** {curr_ord}  |  **Payment:** {curr_pay}")
+            is_admin = (st.session_state.get("user_role") == "Admin")
             with st.form("update_order_form"):
                 new_ord = st.selectbox("Update Fulfillment", ["Pending","Confirmed","Dispatched","Delivered"],
-                                       index=["Pending","Confirmed","Dispatched","Delivered"].index(curr_ord))
+                                       index=["Pending","Confirmed","Dispatched","Delivered"].index(curr_ord),
+                                       disabled=not is_admin)
                 new_pay = st.selectbox("Update Payment", ["Pending","Paid","Failed"],
-                                       index=["Pending","Paid","Failed"].index(curr_pay))
-                if st.form_submit_button("Apply Changes", type="primary"):
-                    with get_session() as session:
-                        try:
-                            logic.update_order_status(session, sel_id, new_ord)
-                            logic.update_payment_status(session, sel_id, new_pay)
-                            session.commit()
-                            st.success(f"Order #{sel_id} updated!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Update failed: {e}")
+                                       index=["Pending","Paid","Failed"].index(curr_pay),
+                                       disabled=not is_admin)
+                if is_admin:
+                    if st.form_submit_button("Apply Changes", type="primary"):
+                        with get_session() as session:
+                            try:
+                                logic.update_order_status(session, sel_id, new_ord)
+                                logic.update_payment_status(session, sel_id, new_pay)
+                                session.commit()
+                                st.success(f"Order #{sel_id} updated!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Update failed: {e}")
+                else:
+                    st.warning("⚠️ View-only: Logging in as Admin is required to modify or delete.")
+                    st.form_submit_button("Close / Dismiss", disabled=True)
         else:
             st.info("No orders to manage yet.")
 
@@ -784,7 +1149,7 @@ with tab_expenses:
         with col_settle:
             st.subheader("🔒 Settle Debt / Log Debt Collected")
             pwd = st.text_input("Enter password to unlock debt collection", type="password", key="settle_pwd")
-            if pwd == "yaa123":
+            if pwd == "Yaa2813":
                 st.success("Unlocked!")
                 with st.form("debt_settlement_form", clear_on_submit=True):
                     settle_amount = st.number_input("Settlement Amount to Subtract (EGP) *", min_value=0.0, value=outstanding_debt if outstanding_debt > 0 else 100.0, step=10.0)
@@ -819,12 +1184,20 @@ with tab_expenses:
             expenses = session.query(Expense).order_by(Expense.day.desc(), Expense.expense_id.desc()).all()
             if expenses:
                 exp_data = [{
+                    "ID": e.expense_id,
                     "Date": e.day.strftime("%Y-%m-%d") if e.day else "—",
                     "Expense Item": e.item,
                     "Wallet / Account": e.wallet or "—",
                     "Amount (EGP)": f"EGP {e.amount:,.2f}"
                 } for e in expenses]
-                st.dataframe(pd.DataFrame(exp_data), use_container_width=True, hide_index=True)
+                df_exp = pd.DataFrame(exp_data)
+                evt = st.dataframe(df_exp, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"exp_df_{st.session_state.exp_df_ver}")
+                if evt and evt.selection and evt.selection.rows:
+                    selected_row = evt.selection.rows[0]
+                    expense_id = int(df_exp.iloc[selected_row]["ID"])
+                    st.session_state["edit_expense_id"] = expense_id
+                    st.session_state["exp_df_ver"] += 1
+                    st.rerun()
             else:
                 st.info("No expenses recorded yet. Click **Add New Expense** or Sync to load Google Sheet data.")
                 

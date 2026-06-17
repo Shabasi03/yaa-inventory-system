@@ -426,7 +426,7 @@ def generate_receipt_pdf(session: Session, order_id: int) -> bytes:
 
     # ── Header banner ──────────────────────────────────────────────────────────
     header_data = [[
-        Paragraph("📦 DEXEF Core", title_style),
+        Paragraph("📦 Yaa-يَــــــــاء Core", title_style),
         Paragraph(f"RECEIPT #{order_id:04d}", ParagraphStyle(
             'ReceiptNo', fontName='Helvetica-Bold', fontSize=14,
             textColor=colors.white, alignment=TA_RIGHT))
@@ -537,7 +537,7 @@ def generate_receipt_pdf(session: Session, order_id: int) -> bytes:
     # ── Footer ─────────────────────────────────────────────────────────────────
     story.append(HRFlowable(width='100%', thickness=0.5, color=colors.HexColor('#e2e8f0')))
     story.append(Spacer(1, 4 * mm))
-    story.append(Paragraph("Thank you for your business! · DEXEF Core Inventory System", footer_style))
+    story.append(Paragraph("Thank you for your business! · Yaa-يَــــــــاء Core Inventory System", footer_style))
     story.append(Paragraph(f"Generated on {datetime.utcnow().strftime('%d %b %Y %H:%M')} UTC", footer_style))
 
     doc.build(story)
