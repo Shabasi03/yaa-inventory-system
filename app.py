@@ -155,6 +155,22 @@ header[data-testid="stHeader"], header {
     background-attachment: fixed;
 }
 
+/* ── Fluid Animations ── */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.kpi-card, .section-header, [data-testid="stForm"], .element-container, [data-testid="stMarkdownContainer"] {
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* ── Premium Tab overrides (Modern Pill Nav) ── */
 .stTabs [data-baseweb="tab-list"] {
     background: rgba(15, 23, 42, 0.95) !important;
@@ -295,6 +311,7 @@ div[data-testid="stTextInput"] input:focus, div[data-testid="stNumberInput"] inp
     box-shadow: 0 25px 60px rgba(0,0,0,0.25) !important;
     background: rgba(255, 255, 255, 0.95) !important;
     backdrop-filter: blur(20px) !important;
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 </style>
 """.replace("__BG_LOGO_BASE64__", bg_logo_base64), unsafe_allow_html=True)
