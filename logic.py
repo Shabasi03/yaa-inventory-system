@@ -739,7 +739,6 @@ def export_to_google_sheet(session: Session, url: str) -> bool:
             ],
             "Expenses": [
                 {
-                    "Expense ID": e.expense_id,
                     "Day": e.day.strftime("%Y-%m-%d") if e.day else "",
                     "Item": e.item,
                     "Wallet": e.wallet or "",
