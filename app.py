@@ -26,6 +26,14 @@ def _format_ledger_reason(reason: str) -> str:
         return f"↩️ Stock reversal — {r}"
     return r
 
+def style_zebra(df):
+    if df.empty:
+        return df
+    def get_row_styles(row):
+        bg = 'background-color: #f8fafc' if row.name % 2 == 0 else 'background-color: #f1f5f9'
+        return [bg] * len(row)
+    return df.style.apply(get_row_styles, axis=1)
+
 # ─── PAGE CONFIG ─────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Yaa-يَــــــــاء Core - Inventory Control",
@@ -866,7 +874,7 @@ with tab_dashboard:
                 "SKU": p.sku, "Product Name": p.item_name, "Arabic Name": p.item_name_arabic,
                 "Stock": p.initial_quantity, "Price": f"EGP {p.selling_price:.2f}", "Supplier": p.supplier
             } for p in low_stock_prods]
-            st.dataframe(pd.DataFrame(low_stock_data), use_container_width=True, hide_index=True)
+            st.dataframe(style_zebra(pd.DataFrame(low_stock_data)), use_container_width=True, hide_index=True)
         else:
             st.success("✅ All products are above the 5-unit safety threshold.")
 
@@ -880,7 +888,7 @@ with tab_dashboard:
                 "Qty Change": f"+{e.quantity_change}" if e.quantity_change > 0 else str(e.quantity_change),
                 "Movement Reason": _format_ledger_reason(e.reason),
             } for e in ledger_entries]
-            st.dataframe(pd.DataFrame(ledger_data), use_container_width=True, hide_index=True)
+            st.dataframe(style_zebra(pd.DataFrame(ledger_data)), use_container_width=True, hide_index=True)
         else:
             st.info("No stock movements recorded yet.")
 
@@ -916,7 +924,7 @@ with tab_products:
                 "Selling (EGP)": f"EGP {p.selling_price:.2f}", "Supplier": p.supplier
             } for p in products]
             df_prod = pd.DataFrame(prod_data)
-            evt = st.dataframe(df_prod, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"prod_df_{st.session_state.prod_df_ver}")
+            evt = st.dataframe(style_zebra(df_prod), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"prod_df_{st.session_state.prod_df_ver}")
             if evt and evt.selection and evt.selection.rows:
                 selected_row = evt.selection.rows[0]
                 sku = df_prod.iloc[selected_row]["SKU"]
@@ -952,7 +960,7 @@ with tab_customers:
                 "Phone": c.customer_phone_number, "Address": c.customer_address
             } for c in customers]
             df_cust = pd.DataFrame(cust_data)
-            evt = st.dataframe(df_cust, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"cust_df_{st.session_state.cust_df_ver}")
+            evt = st.dataframe(style_zebra(df_cust), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"cust_df_{st.session_state.cust_df_ver}")
             if evt and evt.selection and evt.selection.rows:
                 selected_row = evt.selection.rows[0]
                 cust_id = int(df_cust.iloc[selected_row]["ID"])
@@ -1035,7 +1043,7 @@ with tab_orders:
                         "Date": first.order_date.strftime("%Y-%m-%d %H:%M"),
                     })
                 df_orders = pd.DataFrame(orders_data)
-                evt = st.dataframe(df_orders, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"order_df_{st.session_state.order_df_ver}")
+                evt = st.dataframe(style_zebra(df_orders), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"order_df_{st.session_state.order_df_ver}")
                 if evt and evt.selection and evt.selection.rows:
                     selected_row = evt.selection.rows[0]
                     order_id = int(df_orders.iloc[selected_row]["Order ID"])
@@ -1105,7 +1113,7 @@ with tab_orders:
                 "Qty Adjustment": f"+{e.quantity_change}" if e.quantity_change > 0 else str(e.quantity_change),
                 "Movement Reason": _format_ledger_reason(e.reason),
             } for e in ledger]
-            st.dataframe(pd.DataFrame(led_data), use_container_width=True, hide_index=True)
+            st.dataframe(style_zebra(pd.DataFrame(led_data)), use_container_width=True, hide_index=True)
         else:
             st.info("No ledger entries recorded.")
 
@@ -1237,7 +1245,7 @@ with tab_expenses:
                     "Amount (EGP)": f"EGP {e.amount:,.2f}"
                 } for e in expenses]
                 df_exp = pd.DataFrame(exp_data)
-                evt = st.dataframe(df_exp, use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"exp_df_{st.session_state.exp_df_ver}")
+                evt = st.dataframe(style_zebra(df_exp), use_container_width=True, hide_index=True, on_select="rerun", selection_mode="single-row", key=f"exp_df_{st.session_state.exp_df_ver}")
                 if evt and evt.selection and evt.selection.rows:
                     selected_row = evt.selection.rows[0]
                     expense_id = int(df_exp.iloc[selected_row]["ID"])
@@ -1256,7 +1264,7 @@ with tab_expenses:
                     "Amount (EGP)": f"EGP {s.amount:,.2f}",
                     "Notes": s.notes or "—"
                 } for s in settlements]
-                st.dataframe(pd.DataFrame(settle_data), use_container_width=True, hide_index=True)
+                st.dataframe(style_zebra(pd.DataFrame(settle_data)), use_container_width=True, hide_index=True)
             else:
                 st.info("No settlements recorded yet.")
 
