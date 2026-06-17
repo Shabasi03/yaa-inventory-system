@@ -1,6 +1,12 @@
-from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement
+from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement, ActionLog
 from sqlalchemy.orm import Session
 from datetime import datetime
+
+def log_action(session: Session, username: str, action: str, details: str):
+    """Log an action performed by a user."""
+    log = ActionLog(username=username, action=action, details=details, timestamp=datetime.utcnow())
+    session.add(log)
+    session.flush()
 
 # --- CRUD OPERATIONS FOR PRODUCTS ---
 
@@ -579,6 +585,93 @@ def sync_google_sheet(session: Session, url: str) -> bool:
                 pass
         raise e
 
+def export_to_google_sheet(session: Session, url: str) -> bool:
+    """Export all SQLite tables to the Google Sheet via the Apps Script Web App URL."""
+    import urllib.request
+    import json
+    
+    try:
+        products = session.query(Product).all()
+        customers = session.query(Customer).all()
+        orders = session.query(Order).all()
+        expenses = session.query(Expense).all()
+        settlements = session.query(DebtSettlement).all()
+        logs = session.query(ActionLog).all()
+        
+        data = {
+            "Products": [
+                {
+                    "SKU": p.sku,
+                    "Item Name": p.item_name,
+                    "Item Name Arabic": p.item_name_arabic or "",
+                    "Initial Quantity": p.initial_quantity,
+                    "Buying Price": p.buying_price,
+                    "Selling Price": p.selling_price,
+                    "Supplier": p.supplier or ""
+                } for p in products
+            ],
+            "Customers": [
+                {
+                    "Customer ID": c.customer_id,
+                    "Customer Phone Number": c.customer_phone_number,
+                    "Customer Name": c.customer_name,
+                    "Customer Address": c.customer_address or ""
+                } for c in customers
+            ],
+            "Orders": [
+                {
+                    "Order ID": o.order_id,
+                    "Customer ID": o.customer_id,
+                    "SKU": o.sku,
+                    "Quantity": o.quantity,
+                    "Total Amount": o.total_amount,
+                    "Order Status": o.order_status,
+                    "Payment Status": o.payment_status,
+                    "Order Date": o.order_date.strftime("%Y-%m-%d %H:%M:%S")
+                } for o in orders
+            ],
+            "Expenses": [
+                {
+                    "Expense ID": e.expense_id,
+                    "Day": e.day.strftime("%Y-%m-%d") if e.day else "",
+                    "Item": e.item,
+                    "Wallet": e.wallet or "",
+                    "Amount": e.amount
+                } for e in expenses
+            ],
+            "DebtSettlements": [
+                {
+                    "Settlement ID": s.settlement_id,
+                    "Amount": s.amount,
+                    "Date": s.date.strftime("%Y-%m-%d %H:%M:%S"),
+                    "Notes": s.notes or ""
+                } for s in settlements
+            ],
+            "ActionLogs": [
+                {
+                    "Log ID": l.log_id,
+                    "Username": l.username,
+                    "Action": l.action,
+                    "Timestamp": l.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    "Details": l.details or ""
+                } for l in logs
+            ]
+        }
+        
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(data).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req) as res:
+            res_data = json.loads(res.read().decode("utf-8"))
+            return res_data.get("status") == "success"
+    except Exception as e:
+        import logging
+        logging.error(f"Error exporting to Google Sheet: {e}")
+        return False
+
+
 def get_wallet_balance(session: Session) -> dict:
     """Calculate expenses per wallet and the net debt outstanding between Shabasi (شباسي) and Hejazi (حجازي)."""
     all_expenses = session.query(Expense).all()
@@ -599,4 +692,57 @@ def get_wallet_balance(session: Session) -> dict:
         "hejazi_total": hejazi_total,
         "total_settlements": total_settlements
     }
+
+def check_google_sheet_updates(session: Session, url: str) -> bool:
+    """Download the Google Sheet and check if it differs from the last imported sheet.
+    If it differs, import it and return True. Otherwise return False."""
+    import urllib.request
+    import hashlib
+    import os
+    import time
+    
+    try:
+        if "/edit" in url:
+            export_url = url.split("/edit")[0] + "/export?format=xlsx"
+        else:
+            export_url = url
+            
+        connector = "&" if "?" in export_url else "?"
+        export_url = f"{export_url}{connector}cachebust={int(time.time())}"
+        
+        opener = urllib.request.build_opener()
+        opener.addheaders = [('User-Agent', 'Mozilla/5.0')]
+        urllib.request.install_opener(opener)
+        
+        data = urllib.request.urlopen(export_url).read()
+        current_hash = hashlib.md5(data).hexdigest()
+        
+        hash_file = "last_gsheet_hash.txt"
+        last_hash = ""
+        if os.path.exists(hash_file):
+            with open(hash_file, "r") as f:
+                last_hash = f.read().strip()
+                
+        if current_hash != last_hash:
+            with open(hash_file, "w") as f:
+                f.write(current_hash)
+            
+            temp_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "google_sheet_temp.xlsx")
+            with open(temp_path, "wb") as f:
+                f.write(data)
+                
+            import_excel_data(session, temp_path, clear_db=True)
+            
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
+            return True
+        return False
+    except Exception as e:
+        import logging
+        logging.error(f"Error checking Google Sheet updates: {e}")
+        return False
+
 

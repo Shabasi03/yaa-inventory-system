@@ -71,3 +71,13 @@ class DebtSettlement(Base):
     amount = Column(Float, nullable=False)
     date = Column(DateTime, default=datetime.utcnow, nullable=False)
     notes = Column(String(200))
+
+class ActionLog(Base):
+    __tablename__ = 'action_logs'
+    
+    log_id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), nullable=False)
+    action = Column(String(100), nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    details = Column(String(500))
+

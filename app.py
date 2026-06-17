@@ -6,11 +6,36 @@ import base64
 from collections import defaultdict
 from datetime import datetime
 from database import init_db, get_session
-from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement
+from models import Product, Customer, Order, StockLedger, Expense, DebtSettlement, ActionLog
 import logic
 
 
 # ─── HELPER ──────────────────────────────────────────────────────────────────
+def load_settings():
+    import json
+    if os.path.exists("settings.json"):
+        try:
+            with open("settings.json", "r") as f:
+                return json.load(f)
+        except:
+            pass
+    return {"apps_script_url": ""}
+
+def save_settings(settings):
+    import json
+    try:
+        with open("settings.json", "w") as f:
+            json.dump(settings, f)
+    except:
+        pass
+
+def sync_to_google_sheet_if_configured():
+    settings = load_settings()
+    url = settings.get("apps_script_url", "")
+    if url:
+        with get_session() as session:
+            logic.export_to_google_sheet(session, url)
+
 def _format_ledger_reason(reason: str) -> str:
     if not reason:
         return "—"
@@ -35,10 +60,10 @@ def style_zebra(df):
     
     header_styles = [
         {'selector': 'th', 'props': [
-            ('background-color', '#ecdcb9'),
-            ('color', '#2d3748'),
+            ('background-color', '#1e2e3d'),
+            ('color', '#9dd2f2'),
             ('font-weight', '700'),
-            ('border', '1px solid #c8bba3')
+            ('border', '1px solid #2d3e50')
         ]}
     ]
     return df.style.apply(get_row_styles, axis=1).set_table_styles(header_styles)
@@ -61,17 +86,32 @@ if not st.session_state["logged_in"]:
     # Center login UI
     st.markdown("""
     <style>
-    .block-container { max-width: 480px !important; padding-top: 80px !important; }
+    .block-container {
+        max-width: 480px !important;
+        margin: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        min-height: 85vh !important;
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+    }
     #MainMenu, header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
     
     with st.container():
         if os.path.exists("yaa_logo.jpg"):
-            st.image("yaa_logo.jpg", width=110)
+            with open("yaa_logo.jpg", "rb") as f:
+                logo_b64 = base64.b64encode(f.read()).decode()
+            st.markdown(f"""
+            <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                <img src="data:image/jpeg;base64,{logo_b64}" style="width: 110px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);" />
+            </div>
+            """, unsafe_allow_html=True)
         st.markdown("""
-        <h2 style="color: #0f172a; margin-top: 15px; margin-bottom: 5px; font-weight: 700;">Yaa-يَــــــــاء <span style="color: #2563eb;">Core</span></h2>
-        <p style="color: #64748b; font-size: 0.88rem; margin-top: 0; margin-bottom: 25px;">Yaa Inventory &amp; Orders Management System</p>
+        <h2 style="text-align: center; color: #0f172a; margin-top: 15px; margin-bottom: 5px; font-weight: 700;">Yaa-يَــــــــاء <span style="color: #fa7f2a;">Core</span></h2>
+        <p style="text-align: center; color: #64748b; font-size: 0.88rem; margin-top: 0; margin-bottom: 25px;">Yaa Inventory &amp; Orders Management System</p>
         """, unsafe_allow_html=True)
         
         with st.form("login_form", clear_on_submit=False):
@@ -123,6 +163,10 @@ with get_session() as session:
             logic.add_customer(session, "Ahmad Mansoor",  "+966500000001", "Riyadh, KSA")
             logic.add_customer(session, "Fatima Al-Harbi", "+966500000002", "Jeddah, KSA")
             session.commit()
+            try:
+                sync_to_google_sheet_if_configured()
+            except Exception:
+                pass
         except Exception:
             pass
 
@@ -208,8 +252,8 @@ header[data-testid="stHeader"], header {
 }
 .stTabs [aria-selected="true"] {
     color: #fff !important;
-    background: #2563eb !important;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+    background: #fa7f2a !important;
+    box-shadow: 0 4px 14px rgba(250, 127, 42, 0.35) !important;
 }
 .stTabs [data-baseweb="tab-highlight"] { display: none !important; }
 .stTabs [data-baseweb="tab-border"]    { display: none !important; }
@@ -222,24 +266,24 @@ header[data-testid="stHeader"], header {
     border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 20px;
     padding: 24px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+    box-shadow: 0 8px 32px 0 rgba(250, 127, 42, 0.02);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    border-left: 6px solid #2563eb;
+    border-left: 6px solid #fa7f2a;
     border-top: none;
 }
 .kpi-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 16px 40px 0 rgba(31, 38, 135, 0.08);
+    box-shadow: 0 16px 40px 0 rgba(250, 127, 42, 0.06);
     border-left-width: 10px;
     background: rgba(255, 255, 255, 0.85);
 }
 .kpi-title { font-size: 0.8rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
 .kpi-value { font-size: 1.9rem; font-weight: 800; color: #0f172a; margin-top: 6px; }
-.kpi-revenue { border-left-color: #2563eb; }
-.kpi-profit  { border-left-color: #10b981; }
-.kpi-orders  { border-left-color: #f59e0b; }
-.kpi-expenses { border-left-color: #ef4444; }
-.kpi-netprofit { border-left-color: #06b6d4; }
+.kpi-revenue { border-left-color: #fa7f2a; }
+.kpi-profit  { border-left-color: #83b2c2; }
+.kpi-orders  { border-left-color: #1e2a38; }
+.kpi-expenses { border-left-color: #b91c1c; }
+.kpi-netprofit { border-left-color: #10b981; }
 
 /* ── Interactive Premium Buttons ── */
 div.stButton > button:first-child {
@@ -249,14 +293,14 @@ div.stButton > button:first-child {
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 div.stButton > button[kind="primary"]:first-child {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    background: linear-gradient(135deg, #fa7f2a 0%, #d86214 100%) !important;
     border: none !important;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
+    box-shadow: 0 4px 14px rgba(250, 127, 42, 0.3) !important;
     color: white !important;
 }
 div.stButton > button[kind="primary"]:first-child:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
+    box-shadow: 0 6px 20px rgba(250, 127, 42, 0.45) !important;
 }
 div.stButton > button[kind="secondary"]:first-child {
     background: rgba(255, 255, 255, 0.75) !important;
@@ -278,8 +322,8 @@ div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input, di
     transition: all 0.2s ease !important;
 }
 div[data-testid="stTextInput"] input:focus, div[data-testid="stNumberInput"] input:focus {
-    border-color: #2563eb !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    border-color: #fa7f2a !important;
+    box-shadow: 0 0 0 3px rgba(250, 127, 42, 0.15) !important;
 }
 
 /* ── Glassmorphism Alert box ── */
@@ -306,10 +350,10 @@ div[data-testid="stTextInput"] input:focus, div[data-testid="stNumberInput"] inp
     color: white;
     margin-bottom: 28px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-    border-left: 6px solid #2563eb;
+    border-left: 6px solid #fa7f2a;
 }
 .section-header h2 { margin: 0; font-size: 1.55rem; font-weight: 800;
-    background: linear-gradient(to right, #fff, #93c5fd);
+    background: linear-gradient(to right, #fff, #fad5be);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .section-header p  { margin: 6px 0 0; opacity: 0.75; font-size: 0.9rem; }
 
@@ -336,7 +380,7 @@ st.markdown(f"""
     <img src="data:image/jpeg;base64,{logo_base64}" style="width: 58px; height: 58px; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.12);" />
     <div>
         <h1 style="font-size: 2rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.1; letter-spacing: -0.025em;">
-            Yaa-يَــــــــاء <span style="color: #2563eb;">Core</span>
+            Yaa-يَــــــــاء <span style="color: #fa7f2a;">Core</span>
         </h1>
         <p style="color: #64748b; font-size: 0.9rem; margin: 0; padding-top: 2px; font-weight: 600; letter-spacing: 0.01em;">Inventory &amp; Financial Control Hub</p>
     </div>
@@ -363,6 +407,10 @@ def perform_sync():
         try:
             logic.sync_google_sheet(session, GSHEET_URL)
             session.commit()
+            try:
+                sync_to_google_sheet_if_configured()
+            except Exception:
+                pass
             st.session_state["last_sync"] = datetime.now()
             st.cache_data.clear()
             return True
@@ -370,15 +418,53 @@ def perform_sync():
             st.error(f"Sync failed: {e}")
             return False
 
-# Auto-sync at startup or if 3 minutes have passed since last check
-import time
-if "last_sync_check" not in st.session_state:
-    st.session_state["last_sync_check"] = 0
+# Auto-sync at startup ONLY if the database is empty (e.g. on fresh container deployment)
+with get_session() as session:
+    is_db_empty = (session.query(Product).count() == 0)
 
-if time.time() - st.session_state["last_sync_check"] > 180:
-    st.session_state["last_sync_check"] = time.time()
-    with st.spinner("🔄 Auto-updating data from Google Sheets..."):
-        perform_sync()
+if is_db_empty:
+    if "initial_sync_done" not in st.session_state:
+        st.session_state["initial_sync_done"] = True
+        with st.spinner("🔄 Initializing database from Google Sheets..."):
+            perform_sync()
+
+# Periodically check for updates from Google Sheets (every 10 seconds)
+import time
+if "last_hash_check_time" not in st.session_state:
+    st.session_state["last_hash_check_time"] = 0
+
+if time.time() - st.session_state["last_hash_check_time"] > 10:
+    st.session_state["last_hash_check_time"] = time.time()
+    with get_session() as session:
+        try:
+            if logic.check_google_sheet_updates(session, GSHEET_URL):
+                st.session_state["last_sync"] = datetime.now()
+                st.cache_data.clear()
+                st.rerun()
+        except Exception:
+            pass
+
+# Hidden refresh trigger button and JS for 10 seconds auto-check
+col_hidden = st.columns([1])[0]
+with col_hidden:
+    st.markdown("<div style='display:none;'>", unsafe_allow_html=True)
+    if st.button("refresh_trigger_btn"):
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("""
+<script>
+    setTimeout(function() {
+        var buttons = window.parent.document.querySelectorAll('button');
+        for (var i = 0; i < buttons.length; i++) {
+            if (buttons[i].textContent.trim() === "refresh_trigger_btn") {
+                buttons[i].click();
+                break;
+            }
+        }
+    }, 10000);
+</script>
+""", unsafe_allow_html=True)
 
 # Thin status bar and sync button right above navigation
 col_status, col_btn = st.columns([5, 1])
@@ -451,6 +537,7 @@ def dialog_edit_product(sku):
                     cancelled = st.form_submit_button("Close / Dismiss")
                 
             if submitted:
+                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Edit Product", f"SKU: {sku}, Name: {item_name}, Qty: {initial_quantity}")
                 product.item_name = item_name
                 product.item_name_arabic = item_name_arabic
                 product.initial_quantity = initial_quantity
@@ -458,15 +545,24 @@ def dialog_edit_product(sku):
                 product.selling_price = selling_price
                 product.supplier = supplier
                 session.commit()
+                try:
+                    sync_to_google_sheet_if_configured()
+                except Exception:
+                    pass
                 st.session_state["edit_sku"] = None
                 st.success("Product updated!")
                 st.rerun()
             elif deleted:
+                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Delete Product", f"SKU: {sku}, Name: {product.item_name}")
                 # Clear dependencies
                 session.query(StockLedger).filter(StockLedger.sku == sku).delete()
                 session.query(Order).filter(Order.sku == sku).delete()
                 session.delete(product)
                 session.commit()
+                try:
+                    sync_to_google_sheet_if_configured()
+                except Exception:
+                    pass
                 st.session_state["edit_sku"] = None
                 st.success("Product deleted!")
                 st.rerun()
@@ -507,18 +603,28 @@ def dialog_edit_customer(cust_id):
                     cancelled = st.form_submit_button("Close / Dismiss")
                 
             if submitted:
+                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Edit Customer", f"ID: {cust_id}, Name: {customer_name}, Phone: {phone}")
                 customer.customer_name = customer_name
                 customer.customer_phone_number = phone
                 customer.customer_address = address
                 session.commit()
+                try:
+                    sync_to_google_sheet_if_configured()
+                except Exception:
+                    pass
                 st.session_state["edit_cust_id"] = None
                 st.success("Customer updated!")
                 st.rerun()
             elif deleted:
+                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Delete Customer", f"ID: {cust_id}, Name: {customer.customer_name}")
                 # Clear dependencies
                 session.query(Order).filter(Order.customer_id == cust_id).delete()
                 session.delete(customer)
                 session.commit()
+                try:
+                    sync_to_google_sheet_if_configured()
+                except Exception:
+                    pass
                 st.session_state["edit_cust_id"] = None
                 st.success("Customer deleted!")
                 st.rerun()
@@ -563,18 +669,28 @@ def dialog_edit_order(order_id):
                     cancelled = st.form_submit_button("Close / Dismiss")
                 
             if submitted:
+                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Edit Order", f"Order #{order_id}: Status={order_status}, Payment={payment_status}")
                 logic.update_order_status(session, order_id, order_status)
                 logic.update_payment_status(session, order_id, payment_status)
                 session.commit()
+                try:
+                    sync_to_google_sheet_if_configured()
+                except Exception:
+                    pass
                 st.session_state["edit_order_id"] = None
                 st.success("Order updated!")
                 st.rerun()
             elif deleted:
+                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Delete Order", f"Order #{order_id} deleted")
                 for o in orders:
                     if o.order_status == 'Delivered':
                         logic._revert_stock_deduction_for_order(session, o)
                     session.delete(o)
                 session.commit()
+                try:
+                    sync_to_google_sheet_if_configured()
+                except Exception:
+                    pass
                 st.session_state["edit_order_id"] = None
                 st.success("Order deleted!")
                 st.rerun()
@@ -620,17 +736,27 @@ def dialog_edit_expense(expense_id):
                     cancelled = st.form_submit_button("Close / Dismiss")
                 
             if submitted:
+                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Edit Expense", f"ID: {expense_id}, Item: {item}, Amount: {amount}, Wallet: {wallet}")
                 expense.item = item
                 expense.amount = amount
                 expense.wallet = wallet
                 expense.day = datetime.combine(day, datetime.min.time())
                 session.commit()
+                try:
+                    sync_to_google_sheet_if_configured()
+                except Exception:
+                    pass
                 st.session_state["edit_expense_id"] = None
                 st.success("Expense updated!")
                 st.rerun()
             elif deleted:
+                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Delete Expense", f"ID: {expense_id}, Item: {expense.item}, Amount: {expense.amount}")
                 session.delete(expense)
                 session.commit()
+                try:
+                    sync_to_google_sheet_if_configured()
+                except Exception:
+                    pass
                 st.session_state["edit_expense_id"] = None
                 st.success("Expense deleted!")
                 st.rerun()
@@ -648,13 +774,23 @@ if st.session_state["edit_order_id"]:
 if st.session_state["edit_expense_id"]:
     dialog_edit_expense(st.session_state["edit_expense_id"])
 
-tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses = st.tabs([
+tabs_list = [
     "📊  Dashboard",
     "📦  Products Catalog",
     "👥  Customers Directory",
     "🛒  Orders & Fulfillment",
     "💸  Expenses Tracker",
-])
+]
+is_admin_user = (st.session_state.get("user_role") == "Admin")
+if is_admin_user:
+    tabs_list.append("🕵️ Audit Logs")
+
+tabs = st.tabs(tabs_list)
+
+if is_admin_user:
+    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses, tab_logs = tabs
+else:
+    tab_dashboard, tab_products, tab_customers, tab_orders, tab_expenses = tabs
 
 
 # ─── SIDEBAR (Excel import only) ──────────────────────────────────────────────
@@ -675,11 +811,66 @@ with st.sidebar:
                     try:
                         logic.import_excel_data(session, temp_path, clear_db=clear_db_checked)
                         session.commit()
+                        try:
+                            sync_to_google_sheet_if_configured()
+                        except Exception:
+                            pass
                         st.success("Excel data imported successfully!")
                         st.cache_data.clear()
                         st.rerun()
                     except Exception as e:
                         st.error(f"Failed to import Excel: {e}")
+    st.markdown("---")
+    st.markdown("### 🔗 Google Sheet Sync Settings")
+    settings = load_settings()
+    apps_script_url = st.text_input("Apps Script Web App URL", value=settings.get("apps_script_url", ""), placeholder="https://script.google.com/.../exec")
+    if apps_script_url != settings.get("apps_script_url", ""):
+        settings["apps_script_url"] = apps_script_url
+        save_settings(settings)
+        st.success("Web App URL saved!")
+        st.rerun()
+
+    with st.expander("ℹ️ How to set up writing to Google Sheet"):
+        st.markdown("""
+        To sync changes from the app back to the Google Sheet:
+        1. Open your Google Sheet.
+        2. Go to **Extensions** -> **Apps Script**.
+        3. Clear any default code, and paste the code below.
+        4. Click **Save** (disk icon).
+        5. Click **Deploy** -> **New deployment**.
+        6. Select type: **Web app**.
+        7. Set:
+           - *Execute as*: `Me` (your account)
+           - *Who has access*: `Anyone`
+        8. Click **Deploy**, authorize permissions, and copy the **Web App URL**.
+        9. Paste the URL in the box above!
+        """)
+        
+        apps_script_code = """function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    for (var sheetName in data) {
+      var sheet = spreadsheet.getSheetByName(sheetName);
+      if (!sheet) { sheet = spreadsheet.insertSheet(sheetName); }
+      else { sheet.clear(); }
+      var rows = data[sheetName];
+      if (rows && rows.length > 0) {
+        var headers = Object.keys(rows[0]);
+        sheet.appendRow(headers);
+        var values = rows.map(function(row) {
+          return headers.map(function(h) { return row[h] !== null ? row[h] : ""; });
+        });
+        sheet.getRange(2, 1, values.length, headers.length).setValues(values);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({status: "error", message: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}"""
+        st.code(apps_script_code, language="javascript")
+
     st.markdown("---")
     st.info("Connected to local SQLite database: `inventory.db`")
 
@@ -706,9 +897,14 @@ def dialog_add_product():
             else:
                 with get_session() as session:
                     try:
+                        logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Add Product", f"SKU: {sku}, Name: {item_name}, Qty: {initial_quantity}")
                         logic.add_product(session, sku, item_name, item_name_arabic,
                                           initial_quantity, buying_price, selling_price, supplier)
                         session.commit()
+                        try:
+                            sync_to_google_sheet_if_configured()
+                        except Exception:
+                            pass
                         st.success(f"Product '{item_name}' added successfully!")
                         st.rerun()
                     except Exception as e:
@@ -735,8 +931,13 @@ def dialog_restock():
         if submitted:
             with get_session() as session:
                 try:
+                    logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Restock Product", f"SKU: {selected_sku}, Qty: {qty_to_add}, Reason: {restock_reason}")
                     logic.restock_product(session, selected_sku, qty_to_add, restock_reason)
                     session.commit()
+                    try:
+                        sync_to_google_sheet_if_configured()
+                    except Exception:
+                        pass
                     st.success(f"Restocked {qty_to_add} units of {selected_sku}.")
                     st.rerun()
                 except Exception as e:
@@ -757,8 +958,13 @@ def dialog_add_customer():
             else:
                 with get_session() as session:
                     try:
+                        logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Add Customer", f"Name: {customer_name}, Phone: {phone}")
                         logic.add_customer(session, customer_name, phone, address)
                         session.commit()
+                        try:
+                            sync_to_google_sheet_if_configured()
+                        except Exception:
+                            pass
                         st.success(f"Customer '{customer_name}' registered!")
                         st.rerun()
                     except Exception as e:
@@ -780,6 +986,7 @@ def dialog_add_expense():
             else:
                 with get_session() as session:
                     try:
+                        logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Add Expense", f"Item: {item_val}, Amount: {amount_val}, Wallet: {wallet_val}")
                         expense = Expense(
                             day=datetime.combine(day_val, datetime.min.time()),
                             item=item_val,
@@ -788,6 +995,10 @@ def dialog_add_expense():
                         )
                         session.add(expense)
                         session.commit()
+                        try:
+                            sync_to_google_sheet_if_configured()
+                        except Exception:
+                            pass
                         st.success(f"Expense of EGP {amount_val:,.2f} recorded!")
                         st.rerun()
                     except Exception as e:
@@ -833,7 +1044,12 @@ def dialog_new_order(cust_options, prod_options):
                             order_status=order_status,
                             payment_status=payment_status,
                         )
+                        logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Create Order", f"Order #{new_order.order_id}: SKU={selected_sku}, Qty={quantity}, Status={order_status}")
                         session.commit()
+                        try:
+                            sync_to_google_sheet_if_configured()
+                        except Exception:
+                            pass
                         # Generate PDF receipt
                         try:
                             pdf_bytes = logic.generate_receipt_pdf(session, new_order.order_id)
@@ -1116,6 +1332,10 @@ with tab_orders:
                                 logic.update_order_status(session, sel_id, new_ord)
                                 logic.update_payment_status(session, sel_id, new_pay)
                                 session.commit()
+                                try:
+                                    sync_to_google_sheet_if_configured()
+                                except Exception:
+                                    pass
                                 st.success(f"Order #{sel_id} updated!")
                                 st.rerun()
                             except Exception as e:
@@ -1245,7 +1465,12 @@ with tab_expenses:
                                     notes=settle_notes
                                 )
                                 session.add(new_settlement)
+                                logic.log_action(session, st.session_state.get("user_role", "Unknown"), "Record Settlement", f"Amount: {settle_amount}, Notes: {settle_notes}")
                                 session.commit()
+                                try:
+                                    sync_to_google_sheet_if_configured()
+                                except Exception:
+                                    pass
                                 st.success("Settlement recorded successfully!")
                                 time.sleep(1)
                                 st.rerun()
@@ -1293,5 +1518,29 @@ with tab_expenses:
                 st.dataframe(style_zebra(pd.DataFrame(settle_data)), use_container_width=True, hide_index=True)
             else:
                 st.info("No settlements recorded yet.")
+
+
+if is_admin_user:
+    with tab_logs:
+        st.markdown("""
+        <div class="section-header">
+            <h2>🕵️ System Action Audit Logs</h2>
+            <p>Track which user did what actions in real-time.</p>
+        </div>""", unsafe_allow_html=True)
+        
+        with get_session() as session:
+            logs = session.query(ActionLog).order_by(ActionLog.log_id.desc()).all()
+            if logs:
+                log_data = [{
+                    "Log ID": l.log_id,
+                    "Timestamp": l.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                    "User": l.username,
+                    "Action": l.action,
+                    "Details": l.details
+                } for l in logs]
+                st.dataframe(style_zebra(pd.DataFrame(log_data)), use_container_width=True, hide_index=True)
+            else:
+                st.info("No system actions logged yet.")
+
 
 
