@@ -1,0 +1,62 @@
+=== INSPECTING CSV FILES ===
+
+--- File: ياء(البضاعة).csv ---
+Columns: ['التسلسل', 'البند', 'العدد', 'سعر الشراء', 'المجموع', 'سعر البيع', 'كود', 'Unnamed: 7', 'التسويق', 'Unnamed: 9', 'الأقرباء']
+First 10 rows:
+   التسلسل            البند  العدد  سعر الشراء  المجموع  سعر البيع     كود  Unnamed: 7  التسويق  Unnamed: 9  الأقرباء
+0      1.0    ماكينة الفشار   14.0       330.0   4620.0      470.0  Y26601         NaN     Done         NaN     423.0
+1      2.0      قشارة الثوم    2.0       230.0    460.0      340.0  Y26602         NaN     Done         NaN     306.0
+2      3.0      إسبراي دهون   12.0        45.0    540.0       65.0  Y26603         NaN     Done         NaN      59.0
+3      4.0     مج عسلي صغير   24.0        23.0    552.0        NaN  Y26604         NaN  No Need         NaN       0.0
+4      5.0         مطحنة بن    3.0       185.0    555.0      380.0  Y26605         NaN  Not Yet         NaN     342.0
+5      6.0  توابل 10 ق دوار    3.0       200.0    600.0      320.0  Y26606         NaN     Done         NaN     288.0
+6      7.0  قطاعة خضار 22 ق    6.0       225.0   1350.0      340.0  Y26607         NaN     Done         NaN     306.0
+7      8.0        ولاعة USP    6.0        50.0    300.0       65.0  Y26608         NaN     Done         NaN      59.0
+8      9.0     طقم علب 17 ق    6.0       180.0   1080.0      260.0  Y26609         NaN     Done         NaN     234.0
+9     10.0        صابون ورق   24.0         6.5    156.0       15.0  Y26610         NaN     Done         NaN      14.0
+
+--- File: ياء(ياء) (1).csv ---
+Columns: ['المصروفات', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9']
+First 10 rows:
+      المصروفات     Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6      Unnamed: 7   Unnamed: 8 Unnamed: 9
+0         اليوم          البند      مصروف     المبلغ     الطلعة      شباسي      حجازي  مجموع النثريات  عدد البضاعة  حصة البند
+1  June 5, 2026    جو باص ذهاب      حجازي        390          1        NaN        NaN            1639          122         14
+2           NaN           أوبر      شباسي        120        NaN        NaN        NaN             NaN          NaN        NaN
+3           NaN  الفارس الذهبي      شباسي       1560        NaN        NaN        NaN             NaN          NaN        NaN
+4           NaN         التركي      شباسي       5437        NaN        NaN        NaN             NaN          NaN        NaN
+5           NaN         التركي      شباسي       -185        NaN        NaN        NaN             NaN          NaN        NaN
+6           NaN  تنقلات داخلية      حجازي        134        NaN        NaN        NaN             NaN          NaN        NaN
+7           NaN    جو باص عودة      حجازي        550        NaN        NaN        NaN             NaN          NaN        NaN
+8           NaN            أكل      شباسي        100        NaN        NaN        NaN             NaN          NaN        NaN
+9           NaN  الفارس الذهبي      شباسي        320        NaN        NaN        NaN             NaN          NaN        NaN
+
+--- File: ياء(ياء) (2).csv ---
+Columns: ['?????????', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9']
+First 10 rows:
+      ?????????     Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6      Unnamed: 7   Unnamed: 8 Unnamed: 9
+0         ?????          ?????      ?????     ??????     ??????      ?????      ?????  ????? ????????  ??? ???????  ??? ?????
+1  June 5, 2026    ?? ??? ????      ?????        390          1        NaN        NaN            1639          122         14
+2           NaN           ????      ?????        120        NaN        NaN        NaN             NaN          NaN        NaN
+3           NaN  ?????? ??????      ?????       1560        NaN        NaN        NaN             NaN          NaN        NaN
+4           NaN         ??????      ?????       5437        NaN        NaN        NaN             NaN          NaN        NaN
+5           NaN         ??????      ?????       -185        NaN        NaN        NaN             NaN          NaN        NaN
+6           NaN  ?????? ??????      ?????        134        NaN        NaN        NaN             NaN          NaN        NaN
+7           NaN    ?? ??? ????      ?????        550        NaN        NaN        NaN             NaN          NaN        NaN
+8           NaN            ???      ?????        100        NaN        NaN        NaN             NaN          NaN        NaN
+9           NaN  ?????? ??????      ?????        320        NaN        NaN        NaN             NaN          NaN        NaN
+
+--- File: ياء(ياء).csv ---
+Columns: ['?????????', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9']
+First 10 rows:
+      ?????????     Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6      Unnamed: 7   Unnamed: 8 Unnamed: 9
+0         ?????          ?????      ?????     ??????     ??????      ?????      ?????  ????? ????????  ??? ???????  ??? ?????
+1  June 5, 2026    ?? ??? ????      ?????        390          1        NaN        NaN            1639          122         14
+2           NaN           ????      ?????        120        NaN        NaN        NaN             NaN          NaN        NaN
+3           NaN  ?????? ??????      ?????       1560        NaN        NaN        NaN             NaN          NaN        NaN
+4           NaN         ??????      ?????       5437        NaN        NaN        NaN             NaN          NaN        NaN
+5           NaN         ??????      ?????       -185        NaN        NaN        NaN             NaN          NaN        NaN
+6           NaN  ?????? ??????      ?????        134        NaN        NaN        NaN             NaN          NaN        NaN
+7           NaN    ?? ??? ????      ?????        550        NaN        NaN        NaN             NaN          NaN        NaN
+8           NaN            ???      ?????        100        NaN        NaN        NaN             NaN          NaN        NaN
+9           NaN  ?????? ??????      ?????        320        NaN        NaN        NaN             NaN          NaN        NaN
+

@@ -1,0 +1,68 @@
+=== INSPECTING C:\Users\Family\Downloads\motor new project.xlsx ===
+
+--- Sheet Name: Sheet1 ---
+Shape: (808, 82)
+Columns: ['REVISION', 'UNIT', 'ITEM TAG', 'bom linked', 'SOW CLASSIFICATION', 'PHASING', 'SERVICE', 'TYPE', 'COUPLING', 'EQUIPMENT STATUS', 'DRIVER', 'CONSTRUCTION ARRANGEMENT', 'SPEED (RPM)', 'DUTY', 'CLASS', 'COINCIDENCE FACTOR', 'MAX TIME REACC. (s)', 'DESIGN\nPOWER', 'NORMAL\nPOWER', 'PARTICULAR\nPOWER', 'MINIMUM REQUIRED\nPOWER', 'NAMEPLATE\nPOWER', 'RATED VOLTAGE', 'POLES', 'ROTATION DIRECTION', 'TYPE.1', 'EXECUTION', 'DRIVER STATUS', 'RESTARTING SEQUENCE', 'SUPPLY BUS', 'VSD REQUIRED', 'NOTES', 'LOAD X', 'LOAD Y', 'LOAD ZZ', 'CAPACITOR', 'HARMINIC FIL', 'HEAT TRACE', 'HEATER', 'MOTOR', 'OEE', 'RESISTOR', 'CAPACITOR.1', 'HARMINIC FIL.1', 'HEAT TRACE.1', 'HEATER.1', 'MOTOR.1', 'OEE.1', 'RESISTOR.1', 'CAPACITOR.2', 'HARMINIC FIL.2', 'HEAT TRACE.2', 'HEATER.2', 'MOTOR.2', 'OEE.2', 'RESISTOR.2', 'LOAD', 'MA (VSD)', 'MOTOR.3', 'LOAD.1', 'FORMULA', 'LOAD.2', 'FORMULA.1', 'LOAD.3', 'LOAD.4', 'OEE.3', 'MA', 'DESIGN AREA', 'UNIT.1', 'UNIIT DESCRIPTION', 'SP_ID', 'RevColA', 'RevColB', 'Unnamed: 73', 'Unnamed: 74', 'DEMAND', 'EFFICENCY @ DEMAND', 'POWER FACTOR @ DEMAND', 'W', 'VAR', 'VA', 'FLC']
+First 5 rows:
+  REVISION UNIT   ITEM TAG  bom linked SOW CLASSIFICATION PHASING                          SERVICE TYPE COUPLING EQUIPMENT STATUS DRIVER CONSTRUCTION ARRANGEMENT SPEED (RPM) DUTY CLASS  COINCIDENCE FACTOR MAX TIME REACC. (s) DESIGN\nPOWER NORMAL\nPOWER PARTICULAR\nPOWER MINIMUM REQUIRED\nPOWER NAMEPLATE\nPOWER RATED VOLTAGE  POLES ROTATION DIRECTION TYPE.1 EXECUTION DRIVER STATUS  RESTARTING SEQUENCE   SUPPLY BUS VSD REQUIRED NOTES  LOAD X  LOAD Y  LOAD ZZ  CAPACITOR  HARMINIC FIL  HEAT TRACE  HEATER    MOTOR  OEE  RESISTOR  CAPACITOR.1  HARMINIC FIL.1  HEAT TRACE.1  HEATER.1 MOTOR.1  OEE.1  RESISTOR.1  CAPACITOR.2  HARMINIC FIL.2  HEAT TRACE.2  HEATER.2 MOTOR.2  OEE.2  RESISTOR.2         LOAD  MA (VSD) MOTOR.3                           LOAD.1                          FORMULA                LOAD.2 FORMULA.1    LOAD.3                            LOAD.4  OEE.3   MA DESIGN AREA UNIT.1        UNIIT DESCRIPTION                             SP_ID  RevColA  RevColB  Unnamed: 73  Unnamed: 74  DEMAND  EFFICENCY @ DEMAND  POWER FACTOR @ DEMAND       W     VAR      VA      FLC
+0        A   02          c         NaN                 RP    GSD2                CHARGE PUMP MOTOR   HC       DF                P      I                      NaN    2982 rpm    N     N                 1.0                 NaN        712 kW        712 kW               NaN                  790 kW           790 kW        6600 V      2                CCW     MA     Ex-ec             P                  NaN   S2-SWG-01B          NaN    11       1     NaN        0        NaN           NaN         NaN     NaN   712 kW  NaN       NaN          NaN             NaN           NaN       NaN  790 kW    NaN         NaN          NaN             NaN           NaN       NaN  790 kW    NaN         NaN   S2-SWG-01B       NaN      No                CHARGE PUMP MOTOR                CHARGE PUMP MOTOR  MA - Induction Motor        MA  02-P-01A  452534994412423D8969B444B2CA8F30    NaN  NaN       PGA30      2  NAPTHA HYDROTREATER NHT  452534994412423D8969B444B2CA8F30      NaN      NaN          NaN          NaN   0.901               0.970                  0.916  734020  321480  801330   77.4 A
+1        A   02  02-MP-01B         NaN                 RP    GSD2                CHARGE PUMP MOTOR   HC       DF                P      I                      NaN    2982 rpm    S     N                 0.0                 NaN        712 kW        712 kW               NaN                  790 kW           790 kW        6600 V      2                CCW     MA     Ex-ec             P                  NaN   S2-SWG-01A          NaN    11       1     NaN        0        NaN           NaN         NaN     NaN   712 kW  NaN       NaN          NaN             NaN           NaN       NaN  790 kW    NaN         NaN          NaN             NaN           NaN       NaN  790 kW    NaN         NaN   S2-SWG-01A       NaN      No                CHARGE PUMP MOTOR                CHARGE PUMP MOTOR  MA - Induction Motor        MA  02-P-01B  5F0E83903EE34A9B8F780C4D814771D5    NaN  NaN       PGA30      2  NAPTHA HYDROTREATER NHT  5F0E83903EE34A9B8F780C4D814771D5      NaN      NaN          NaN          NaN   0.901               0.970                  0.916  734020  321480  801330   77.4 A
+2        A   02  02-MP-02A         NaN                NW+     NaN  WASH WATER INJECTION PUMP MOTOR   PR       GF                P      I                      NaN    1470 rpm    N     N                 1.0                 NaN       13.8 kW       13.8 kW               NaN                   20 kW            22 kW         400 V      4                NaN     MA     Ex-ec             P                  NaN  S2-PMCC-01A          NaN    11       1     NaN        0        NaN           NaN         NaN     NaN  13.8 kW  NaN       NaN          NaN             NaN           NaN       NaN   20 kW    NaN         NaN          NaN             NaN           NaN       NaN   22 kW    NaN         NaN  S2-PMCC-01A       NaN      No  WASH WATER INJECTION PUMP MOTOR  WASH WATER INJECTION PUMP MOTOR  MA - Induction Motor        MA  02-P-02A  DAA842C731904BD794E627158D231FC1    NaN  NaN       PGA70      2  NAPTHA HYDROTREATER NHT  DAA842C731904BD794E627158D231FC1      NaN      NaN          NaN          NaN   0.627               0.921                  0.726   14980   14190   20630   42.4 A
+3        A   02  02-MP-02B         NaN                NW+     NaN  WASH WATER INJECTION PUMP MOTOR   PR       GF                P      I                      NaN    1470 rpm    S     N                 0.0                 NaN       13.8 kW       13.8 kW               NaN                   20 kW            22 kW         400 V      4                NaN     MA     Ex-ec             P                  NaN  S2-PMCC-01B          NaN    13       1     NaN        0        NaN           NaN         NaN     NaN  13.8 kW  NaN       NaN          NaN             NaN           NaN       NaN   20 kW    NaN         NaN          NaN             NaN           NaN       NaN   22 kW    NaN         NaN  S2-PMCC-01B       NaN      No  WASH WATER INJECTION PUMP MOTOR  WASH WATER INJECTION PUMP MOTOR  MA - Induction Motor        MA  02-P-02B  2B65E1E5DD9049E3B53623CA76517BF4    NaN  NaN       PGA70      2  NAPTHA HYDROTREATER NHT  2B65E1E5DD9049E3B53623CA76517BF4      NaN      NaN          NaN          NaN   0.627               0.921                  0.726   14980   14190   20630   42.4 A
+4        A   02  02-MP-04A         NaN                 RP     NaN       STRIPPER REFLUX PUMP MOTOR   HC       DF                P      I                       B3    1470 rpm    N     N                 1.0                 NaN       57.6 kW       57.6 kW               NaN                   70 kW            75 kW         400 V      4                 CW     MA     Ex-ec             P                  NaN  S2-PMCC-03A          NaN    11       1     NaN        0        NaN           NaN         NaN     NaN  57.6 kW  NaN       NaN          NaN             NaN           NaN       NaN   70 kW    NaN         NaN          NaN             NaN           NaN       NaN   75 kW    NaN         NaN  S2-PMCC-03A       NaN      No       STRIPPER REFLUX PUMP MOTOR       STRIPPER REFLUX PUMP MOTOR  MA - Induction Motor        MA  02-P-04A  43F763D2BC244D9F983E34C3BA7DEF9D    NaN  NaN       PGA40      2  NAPTHA HYDROTREATER NHT  43F763D2BC244D9F983E34C3BA7DEF9D      NaN      NaN          NaN          NaN   0.768               0.938                  0.881   61410   32980   69710  128.0 A
+
+--- Sheet Name: Sheet3 ---
+Shape: (808, 8)
+Columns: ['motor', 'status', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7']
+First 5 rows:
+       motor      status Unnamed: 2  Unnamed: 3  Unnamed: 4  Unnamed: 5 Unnamed: 6  Unnamed: 7
+0  02-MP-01A  BOM linked        NaN         NaN         NaN         NaN          c         NaN
+1  02-MP-01B  BOM linked        NaN         NaN         NaN         NaN  02-MP-01B  BOM linked
+2  08-MP-15A  BOM linked        NaN         NaN         NaN         NaN  02-MP-02A         NaN
+3  08-MP-15B  BOM linked        NaN         NaN         NaN         NaN  02-MP-02B         NaN
+4  18-MP-01A  BOM linked        NaN         NaN         NaN         NaN  02-MP-04A  BOM linked
+
+--- Sheet Name: Sheet4 ---
+Shape: (808, 4)
+Columns: ['ASSET', 'status', 'MR', 'AREA SCOPE']
+First 5 rows:
+       ASSET      status        MR AREA SCOPE
+0  02-MP-01A  BOM linked  0910-101        YES
+1  02-MP-01B  BOM linked  0910-101        YES
+2  02-MP-02A         NaN  0920-101        YES
+3  02-MP-02B         NaN  0920-101        YES
+4  02-MP-04A  BOM linked  0910-109        YES
+
+--- Sheet Name: Sheet6 ---
+Shape: (13, 1)
+Columns: ['MISSING MR']
+First 5 rows:
+  MISSING MR
+0   0920-101
+1   0710-R01
+2   0710-101
+3   4046-101
+4   4151-101
+
+--- Sheet Name: Sheet2 ---
+Shape: (928, 8)
+Columns: ['ID', 'Asset', 'CMT', 'Description', 'Part No.', 'Total No. Installed', 'Manufacturer', 'MR']
+First 5 rows:
+   ID      Asset            CMT               Description       Part No.  Total No. Installed         Manufacturer                MR
+0   1  02-MP-01A  99-875-4943-9    BUSHING INSULATOR ASS.  IRM0464611005                    3  SISTEMI INDUSTRIALI  2544-00-0910-101
+1   2  02-MP-01A  99-875-4944-9        DISCONNECTABLE KIT    IRM99348018                    3  SISTEMI INDUSTRIALI  2544-00-0910-101
+2   3  02-MP-01A  99-875-4946-9              SPACE HEATER    IRM99348020                    1  SISTEMI INDUSTRIALI  2544-00-0910-101
+3   4  02-MP-01A  99-875-4949-9           EXTENSION CABLE  IRM0463883012                    5  SISTEMI INDUSTRIALI  2544-00-0910-101
+4   5  02-MP-01A  99-875-4950-9  OIL RING SIZE: OD 160 mm     IRM9916503                    2  SISTEMI INDUSTRIALI  2544-00-0910-101
+
+--- Sheet Name: Sheet5 ---
+Shape: (1163, 2)
+Columns: ['asset', 'MR']
+First 5 rows:
+       asset        MR
+0  02-MP-01A  0910-101
+1  02-MP-01B  0910-101
+2  02-MP-02A  0920-101
+3  02-MP-02B  0920-101
+4  02-MP-04A  0910-109
+

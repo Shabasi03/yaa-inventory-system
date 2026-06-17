@@ -1,0 +1,20 @@
+# Database
+*.db
+*.sqlite3
+
+# Excel temporary / uploaded files
+*.xlsx
+*.csv
+!uploaded_data_template.xlsx  # Keep template if exists
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+.env
+venv/
+.venv/
+.streamlit/config.toml

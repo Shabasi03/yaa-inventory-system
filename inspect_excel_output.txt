@@ -1,0 +1,72 @@
+=== SEARCHING EXCEL FILES FOR INVENTORY SHEETS ===
+
+File: 1-Elect. & Inst. 6 - 17 Jul. 2025.xlsx -> Sheets: ['Sheet1', 'Sheet2', 'Sheet3']
+File: 2YSP 910.xlsx -> Sheets: ['Sheet1']
+File: BOM SUCCESS.xlsx -> Sheets: ['Sheet1']
+File: BOM-Complete-Rev.2.xlsx -> Sheets: ['Complete_BOM']
+File: Book1.xlsx -> Sheets: ['84f4665253636a036a155e7438ef14b']
+File: Consolidated_Spare_Parts_Full.xlsx -> Sheets: ['Sheet1']
+File: expenses (4)-shabasi.xls -> Sheets: ['Worksheet', 'Shabasi']
+File: Extracted_Spare_Parts_Refined_Final.xlsx -> Sheets: ['Sheet1']
+File: Extracted_Spare_Parts_Tables.xlsx -> Sheets: ['Spare Parts List', 'Asset Qty Table']
+File: Extracted_Spare_Parts_Tables_v2.xlsx -> Sheets: ['Spare Parts List', 'Asset Qty Table']
+File: Extracted_Spare_Parts_Tables_v3.xlsx -> Sheets: ['Spare Parts List', 'Asset Qty Table']
+File: Insect Zapper Animation Script A.xlsx -> Sheets: ['Insect Zapper Animation Script']
+File: LV-MOTOR-BOM-2YSP-SUCCESS-REV.1 (1).xlsx -> Sheets: ['Sheet1']
+File: LV-MOTOR-BOM-2YSP-SUCCESS-REV.1.xlsx -> Sheets: ['Sheet1']
+File: LV-PUMP-BOM-SUNDYNE-RAW-DESC-SUCCESS.xlsx -> Sheets: ['Sheet1']
+File: LV-PUMP-BOM-SUNDYNE-SUCCESS.xlsx -> Sheets: ['Sheet1']
+File: Marks Physics 2- Class .xlsx -> Sheets: ['Marks', 'ورقة2']
+File: motor new project.xlsx -> Sheets: ['Sheet1', 'Sheet3', 'Sheet4', 'Sheet6', 'Sheet2', 'Sheet5']
+File: Spare Parts List Extraction and Formatting.xlsx -> Sheets: ['Spare Parts List Extraction and']
+File: Student Attendance_2025-10-17.xlsx -> Sheets: ['Attendance']
+File: Student Attendance_2025-10-27.xlsx -> Sheets: ['Attendance']
+File: Student Attendance_2025-12-03.xlsx -> Sheets: ['Attendance']
+File: Yaa.xlsx -> Sheets: ['Products', 'Orders', 'Expenses', 'Customers', 'Income']
+  --> MATCHING SHEETS FOUND: ['Products', 'Orders', 'Expenses', 'Customers', 'Income']
+    Sheet: Products (Shape: (5, 7))
+    Columns: ['Item Name', 'Item Name Arabic', 'SKU', 'Initial Quantity', 'Buying Price', 'Selling Price', 'Supplier']
+    Sample data:
+               Item Name Item Name Arabic     SKU  Initial Quantity  Buying Price  Selling Price  Supplier
+0        Popcorn Machine    ماكينة الفشار  Y26601                14           330            470       NaN
+1          Garlic Peeler      قشارة الثوم  Y26602                 2           230            340       NaN
+2   Grease Removal Spray      إسبراي دهون  Y26603                12            45             65       NaN
+3              Honey Mug     مج عسلي صغير  Y26604                24            23             40       NaN
+4  Coffee Grinder NM8600         مطحنة بن  Y26605                 3           185            380       NaN
+
+    Sheet: Orders (Shape: (5, 16))
+    Columns: ['Customer Phone', 'Customer ID', 'Customer Name', 'Timestamp', 'Order No.', 'Description', 'SKU', 'Order Quantity', 'Sum', 'Sale', 'After Sale', 'Unnamed: 11', 'Order No..1', 'Customer ID.1', 'Customer Name.1', 'Total Order Price']
+    Sample data:
+   Customer Phone  Customer ID      Customer Name               Timestamp  Order No.       Description     SKU  Order Quantity  Sum   Sale  After Sale  Unnamed: 11  Order No..1  Customer ID.1        Customer Name.1  Total Order Price
+0      1003153423            1  محمد يسري الشباسي 2026-06-14 20:37:50.304          1     ماكينة الفشار  Y26601               1  470  Owner       330.0          NaN          1.0            1.0      محمد يسري الشباسي              721.5
+1      1003153423            1  محمد يسري الشباسي 2026-06-14 20:37:50.304          1   قطاعة خضار 22 ق  Y26607               1  340  Owner       225.0          NaN          2.0            2.0  عبد الرحمن محمد حجازي              903.0
+2      1003153423            1  محمد يسري الشباسي 2026-06-14 20:37:50.304          1         صابون ورق  Y26610               1   15  Owner         6.5          NaN          3.0            3.0    أمنية محمد حسن نصار              729.0
+3      1003153423            1  محمد يسري الشباسي 2026-06-14 20:37:50.304          1        جوانتي سلك  Y26613               1   20  Owner        10.0          NaN          NaN            NaN                    NaN                NaN
+4      1003153423            1  محمد يسري الشباسي 2026-06-14 20:37:50.304          1  منظم دولاب رصاصي  Y26612               3  270  Owner       150.0          NaN          NaN            NaN                    NaN                NaN
+
+    Sheet: Expenses (Shape: (0, 0))
+    Columns: []
+    Sample data:
+Empty DataFrame
+Columns: []
+Index: []
+
+    Sheet: Customers (Shape: (4, 4))
+    Columns: ['Customer Phone Number', 'Customer ID', 'Customer Name', 'Customer Address']
+    Sample data:
+   Customer Phone Number  Customer ID          Customer Name  Customer Address
+0             1003153423            1      محمد يسري الشباسي               NaN
+1             1115489439            2  عبد الرحمن محمد حجازي               NaN
+2             1279846756            3    أمنية محمد حسن نصار               NaN
+3             1224131668            4    إيمان محمد حسن نصار               NaN
+
+    Sheet: Income (Shape: (3, 6))
+    Columns: ['Order ID', 'Customer ID', 'Customer Name', 'Total Amount', 'Order Status', 'Payment Status']
+    Sample data:
+   Order ID  Customer ID          Customer Name  Total Amount Order Status Payment Status
+0         1            1      محمد يسري الشباسي         721.5    Delivered          Paied
+1         2            2  عبد الرحمن محمد حجازي         903.0    Confirmed          Paied
+2         3            3    أمنية محمد حسن نصار         729.0    Confirmed        Pending
+
+File: ~$MIDOR_Maximal_Wired_List.xlsx -> Error reading: Excel file format cannot be determined, you must specify an engine manually.
+
